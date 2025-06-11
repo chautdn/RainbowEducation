@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+# Dependency directories
+src/components/utils/Constant.js
+.env
+.env.local
+.env.production
