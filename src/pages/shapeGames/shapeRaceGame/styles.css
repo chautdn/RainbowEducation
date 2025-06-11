@@ -1,0 +1,76 @@
+.track {
+    display: flex;
+    justify-content: space-around;
+    height: 300px;
+    width: 100%;
+    perspective: 1000px;
+    transform-style: preserve-3d;
+}
+
+.lane {
+    background: linear-gradient(to bottom, #ff7f50, #e0e0e0);
+    width: 20%;
+    height: 100%;
+    border: 2px solid #01427a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.shape {
+    width: 50px;
+    height: 50px;
+    display: inline-block;
+    transform: translateZ(20px) rotateY(15deg);
+    transition: all 0.5s ease;
+}
+
+.shape.circle {
+    background-color: #00bcd4;
+    border-radius: 50%;
+}
+
+.shape.square {
+    background-color: #ff5757;
+}
+
+.shape.triangle {
+    width: 0;
+    height: 0;
+    border-left: 25px solid transparent;
+    border-right: 25px solid transparent;
+    border-bottom: 50px solid #e14177;
+}
+
+@keyframes moveForward {
+    0% {
+        transform: translateX(0px) translateZ(20px);
+    }
+
+    100% {
+        transform: translateX(100px) translateZ(100px);
+    }
+}
+
+/* .shape {
+    animation: moveForward 2s infinite alternate;
+} */
+
+/* Add this to your styles.css */
+
+@keyframes fade-in {
+    0% {
+        opacity: 0;
+        transform: translateY(-50px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-in {
+    animation: fade-in 0.5s ease forwards;
+}

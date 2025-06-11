@@ -1,0 +1,36 @@
+@keyframes fall {
+    0% {
+        transform: translateY(-100px);
+        opacity: 0;
+    }
+
+    100% {
+        transform: translateY(300px);
+        opacity: 1;
+    }
+}
+
+.animate-fall {
+    animation: fall linear infinite;
+}
+
+.circle {
+    width: 40px;
+    height: 40px;
+    background-color: #ff4d4d;
+    border-radius: 50%;
+}
+
+.square {
+    width: 40px;
+    height: 40px;
+    background-color: #4dff4d;
+}
+
+.triangle {
+    width: 0;
+    height: 0;
+    border-left: 20px solid transparent;
+    border-right: 20px solid transparent;
+    border-bottom: 40px solid #4d4dff;
+}

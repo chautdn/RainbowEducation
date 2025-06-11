@@ -1,0 +1,29 @@
+.falling-shapes {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    /* Prevent interactions with falling numbers */
+}
+
+.falling-shape {
+    position: absolute;
+    top: -20px;
+    font-size: 30px;
+    color: blue;
+    opacity: 0.5;
+    animation: drop linear forwards;
+}
+
+@keyframes drop {
+    from {
+        top: -20px;
+    }
+
+    to {
+        top: 100vh;
+
+    }
+}

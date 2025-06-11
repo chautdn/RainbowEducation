@@ -1,0 +1,56 @@
+/* InfiniteScroll.module.css */
+.wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: Black;
+  font-family: 'Poppins', sans-serif;
+}
+
+.contentContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.wrapper span {
+  max-width: 700px;
+  text-align: left;
+  font-size: 30px;
+  line-height: 1;
+  margin: 0;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+}
+
+.benefits {
+  position: relative;
+  height: 1.2em;
+  overflow: hidden;
+  display: inline-block;
+  margin-left: 5px;
+}
+
+.benefits span {
+  text-align: center;
+  display: block;
+  height: 1.2em;
+  animation: auto-scroll 10s infinite steps(1);
+  background: linear-gradient(to right,blue,blue);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+@keyframes auto-scroll {
+  0%   { transform: translateY(0); }
+  20%  { transform: translateY(0); }
+  25%  { transform: translateY(-1.2em); }
+  40%  { transform: translateY(-1.2em); }
+  45%  { transform: translateY(-2.4em); }
+  60%  { transform: translateY(-2.4em); }
+  65%  { transform: translateY(-3.6em); }
+  80%  { transform: translateY(-3.6em); }
+  85%  { transform: translateY(-4.8em); }
+  100% { transform: translateY(-4.8em); }
+}
