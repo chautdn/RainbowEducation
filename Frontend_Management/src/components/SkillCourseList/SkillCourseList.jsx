@@ -6,7 +6,7 @@ const SkillCourseList = ({ skillName, courses, onViewAll }) => {
 
   const handleCourseClick = (course) => {
     console.log('Clicking course:', course);
-    const path = `/lesson-detail/${course.tag}/lesson${course.lessonId}`;
+    const path = `/lesson-detail/${course.category}/lesson${course.lessonId}`;
     console.log('Navigating to:', path);
     navigate(path);
   };

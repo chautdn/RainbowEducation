@@ -22,8 +22,8 @@ import { ParentDashboard } from "./pages/ParentDashboard/ParentDashboard";
 import { SettingsPage } from "./pages/SettingsPage/SettingsPage";
 import Lesson1 from './pages/lesson-detail/vietnamese/Lesson1';
 import Lesson2 from './pages/lesson-detail/vietnamese/Lesson2';
-
-
+import NumberLessonPage from './pages/lesson-detail/numbers/Lesson1';
+import AnimalLessonPage from './pages/lesson-detail/animal/lesson1';
 function App() {
   return (
     <>
@@ -52,7 +52,8 @@ function App() {
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/lesson-detail/vietnamese/lesson1" element={<Lesson1 />} />
         <Route path="/lesson-detail/vietnamese/lesson2" element={<Lesson2 />} />
-        {/* group chu cai */}
+        <Route path="/lesson-detail/numbers/lesson1" element={<NumberLessonPage />} />
+        <Route path="/lesson-detail/animal/lesson3" element={<AnimalLessonPage />} />
 
       </Route>
 

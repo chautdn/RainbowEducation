@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { ArrowLeft, Volume2, Play, SkipBack, SkipForward, ChevronLeft, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { letterGroups } from "../../../data/courseData";
+import LessonCompleteModal from "../../../components/sharedComponents/LessonCompleteModal";
 
 export default function LessonDetailPage() {
     const [selectedLetter, setSelectedLetter] = useState(letterGroups[0].letters[0]);
@@ -12,7 +12,7 @@ export default function LessonDetailPage() {
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentGroup, setCurrentGroup] = useState(0);
     const navigate = useNavigate();
-
+    const [showModal, setShowModal] = useState(false);
     const letterVideos = {
         "A": "https://res.cloudinary.com/dvcpy4kmm/video/upload/v1749178684/chu_a_yfojk7.mp4",
         "Ă": "https://res.cloudinary.com/dvcpy4kmm/video/upload/v1749178684/chu_ă_u25h2u.mp4",
@@ -105,54 +105,21 @@ export default function LessonDetailPage() {
 
     useEffect(() => {
         const video = document.getElementById("letterVideo");
+        console.log("Video element:", video);
+        console.log("Selected letter:", selectedLetter);
+        console.log("Is playing:", isPlaying);
 
         if (video && selectedLetter === "Y" && isPlaying) {
             const handleVideoEnd = () => {
-                toast.info(
-                    <div className="flex flex-col items-center">
-                        <p className="font-bold text-lg mb-2">🎉 Xuất sắc! Bạn đã hoàn thành tất cả chữ cái!</p>
-                        <p className="mb-4">Bạn có muốn tiếp tục với bài học viết chữ thường không?</p>
-                        <div className="flex gap-4">
-                            <button
-                                onClick={() => {
-                                    toast.dismiss();
-                                    navigate("/lesson-detail/vietnamese/lesson2");
-                                }}
-                                className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
-                            >
-                                Tiếp tục học
-                            </button>
-                            <button
-                                onClick={() => {
-                                    toast.dismiss();
-                                    navigate("/curriculum");
-                                }}
-                                className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
-                            >
-                                Về trang chủ
-                            </button>
-                            <button
-                                onClick={() => toast.dismiss()}
-                                className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
-                            >
-                                Để sau
-                            </button>
-                        </div>
-                    </div>,
-                    {
-                        position: "top-center",
-                        autoClose: false,
-                        closeOnClick: false,
-                        draggable: false,
-                        className: "custom-toast",
-                    }
-                );
+                setShowModal(true); // <-- Hiển thị modal khi video kết thúc
             };
 
-            video.addEventListener('ended', handleVideoEnd);
-            return () => video.removeEventListener('ended', handleVideoEnd);
+            video.addEventListener("ended", handleVideoEnd);
+            return () => {
+                video.removeEventListener("ended", handleVideoEnd);
+            };
         }
-    }, [selectedLetter, isPlaying, navigate]);
+    }, [selectedLetter, isPlaying]);
 
     const handleLetterSelect = (letter) => {
         setSelectedLetter(letter);
@@ -210,7 +177,7 @@ export default function LessonDetailPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-100 via-purple-50 to-pink-100">
+        <div className="h-screen overflow-y-auto bg-gradient-to-br from-sky-100 via-purple-50 to-pink-100">
             {/* Header */}
             <header className="bg-white/80 backdrop-blur-sm shadow-lg border-b-2 border-white/50">
                 <div className="max-w-7xl mx-auto px-4 py-4">
@@ -239,45 +206,42 @@ export default function LessonDetailPage() {
                                 <button
                                     onClick={handlePrevGroup}
                                     disabled={currentGroup === 0}
-                                    className={`p-2 rounded-full ${
-                                        currentGroup === 0
+                                    className={`p-2 rounded-full ${currentGroup === 0
                                             ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                                             : "bg-purple-500 text-white hover:bg-purple-600"
-                                    }`}
+                                        }`}
                                 >
                                     <ChevronLeft className="w-5 h-5" />
                                 </button>
                                 <button
                                     onClick={handleNextGroup}
                                     disabled={currentGroup === letterGroups.length - 1}
-                                    className={`p-2 rounded-full ${
-                                        currentGroup === letterGroups.length - 1
+                                    className={`p-2 rounded-full ${currentGroup === letterGroups.length - 1
                                             ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                                             : "bg-purple-500 text-white hover:bg-purple-600"
-                                    }`}
+                                        }`}
                                 >
                                     <ChevronRight className="w-5 h-5" />
                                 </button>
                             </div>
                         </div>
                         <p className="text-sm text-gray-600 mb-4">{letterGroups[currentGroup].description}</p>
-                        
+
                         {/* Alphabet Grid - Vertical Column */}
                         <div className="flex flex-col gap-6 overflow-y-auto items-center justify-center" style={{ height: 'calc(100% - 120px)' }}>
                             {letterGroups[currentGroup].letters.map((letter) => (
                                 <button
                                     key={letter}
                                     onClick={() => handleLetterSelect(letter)}
-                                    className={`rounded-3xl font-bold text-7xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center justify-center ${
-                                        selectedLetter === letter
+                                    className={`rounded-3xl font-bold text-7xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center justify-center ${selectedLetter === letter
                                             ? "bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-2xl scale-105"
                                             : "bg-gradient-to-br from-yellow-200 to-orange-200 text-gray-700 hover:from-yellow-300 hover:to-orange-300"
-                                    }`}
+                                        }`}
                                     style={{
                                         height: '180px',     // Tăng chiều cao cho mỗi button
                                         width: '90%',       // Chiều rộng đầy đủ
-                                        boxShadow: selectedLetter === letter 
-                                            ? '0 10px 25px -5px rgba(59, 130, 246, 0.5)' 
+                                        boxShadow: selectedLetter === letter
+                                            ? '0 10px 25px -5px rgba(59, 130, 246, 0.5)'
                                             : '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
                                     }}
                                 >
@@ -383,9 +347,8 @@ export default function LessonDetailPage() {
                                 <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-3xl border-2 border-dashed border-orange-200 relative overflow-hidden flex items-center justify-center">
                                     <div style={letterContainerStyle}>
                                         <div
-                                            className={`absolute inset-0 flex items-center justify-center transition-all duration-1000 ${
-                                                isAnimating ? "text-blue-500" : "text-gray-700"
-                                            }`}
+                                            className={`absolute inset-0 flex items-center justify-center transition-all duration-1000 ${isAnimating ? "text-blue-500" : "text-gray-700"
+                                                }`}
                                             style={{
                                                 transform: `scale(${isAnimating ? 1.1 : 1})`,
                                                 filter: isAnimating ? "drop-shadow(0 0 30px rgba(59,130,246,0.5))" : "none",
@@ -399,9 +362,8 @@ export default function LessonDetailPage() {
                                         {isAnimating && (
                                             <div className="absolute inset-0 pointer-events-none">
                                                 <div
-                                                    className={`absolute w-3 h-3 bg-red-500 rounded-full transition-all duration-800 ${
-                                                        animationStep >= 1 ? "opacity-100 scale-100" : "opacity-0 scale-0"
-                                                    }`}
+                                                    className={`absolute w-3 h-3 bg-red-500 rounded-full transition-all duration-800 ${animationStep >= 1 ? "opacity-100 scale-100" : "opacity-0 scale-0"
+                                                        }`}
                                                     style={{
                                                         top: '15%',
                                                         left: '50%',
@@ -409,9 +371,8 @@ export default function LessonDetailPage() {
                                                     }}
                                                 />
                                                 <div
-                                                    className={`absolute w-3 h-3 bg-red-500 rounded-full transition-all duration-800 delay-300 ${
-                                                        animationStep >= 2 ? "opacity-100 scale-100" : "opacity-0 scale-0"
-                                                    }`}
+                                                    className={`absolute w-3 h-3 bg-red-500 rounded-full transition-all duration-800 delay-300 ${animationStep >= 2 ? "opacity-100 scale-100" : "opacity-0 scale-0"
+                                                        }`}
                                                     style={{
                                                         top: '50%',
                                                         left: '25%',
@@ -419,9 +380,8 @@ export default function LessonDetailPage() {
                                                     }}
                                                 />
                                                 <div
-                                                    className={`absolute w-3 h-3 bg-red-500 rounded-full transition-all duration-800 delay-600 ${
-                                                        animationStep >= 3 ? "opacity-100 scale-100" : "opacity-0 scale-0"
-                                                    }`}
+                                                    className={`absolute w-3 h-3 bg-red-500 rounded-full transition-all duration-800 delay-600 ${animationStep >= 3 ? "opacity-100 scale-100" : "opacity-0 scale-0"
+                                                        }`}
                                                     style={{
                                                         top: '50%',
                                                         left: '75%',
@@ -451,6 +411,12 @@ export default function LessonDetailPage() {
                         </div>
                     </div>
                 </div>
+                {showModal && (
+                    <LessonCompleteModal
+                        onClose={() => setShowModal(false)}
+                        onContinuePath={`/lesson-detail/vietnamese/lesson2`} // hoặc path bất kỳ bạn muốn
+                    />
+                )}
             </main>
         </div>
     );

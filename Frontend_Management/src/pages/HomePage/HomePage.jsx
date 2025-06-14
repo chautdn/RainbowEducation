@@ -57,6 +57,7 @@ export const HomePage = () => {
                 isActive: course.isActive, // Add this line
                 createdAt: course.createdAt, // Add this line
                 updatedAt: course.updatedAt, // Add this line
+                category: course.category, // Add this line
               });
             }
             return acc;

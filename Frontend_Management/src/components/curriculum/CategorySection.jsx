@@ -3,19 +3,24 @@ import { useNavigate } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { getCourseNamesByGrade, courseImages } from '../../data/courseData';
 
-export default function CategorySection({ title, active, categoryType }) {
+export default function CategorySection({ title, active, categoryType, note }) {
   const navigate = useNavigate();
   const grades = ['Pre-K', 'K', '1', '2', '3', '4', '5'];
   const [selectedGrade, setSelectedGrade] = React.useState('Pre-K');
 
   // Lấy danh sách khóa học dựa trên grade và categoryType
-  const currentCourseNames = getCourseNamesByGrade(selectedGrade, categoryType);
+  const currentCourseNames = getCourseNamesByGrade(selectedGrade, categoryType, note);
 
-  const handleCourseClick = (lessonIndex, courseName) => {
+  const handleCourseClick = (course) => {
     if (categoryType === 'math') {
-      navigate(`/lesson-detail/numbers/lesson${lessonIndex + 1}`);
+      navigate(`/lesson-detail/numbers/lesson${course.lessonIndex}`);
     } else if (categoryType === 'vietnamese') {
-      navigate(`/lesson-detail/vietnamese/lesson${lessonIndex + 1}`);
+      // Kiểm tra nếu là khóa học động vật
+      if (course.note === 'animals') {
+        navigate(`/lesson-detail/animal/lesson${course.lessonIndex}`);
+      } else {
+        navigate(`/lesson-detail/vietnamese/lesson${course.lessonIndex}`);
+      }
     }
   };
 
@@ -55,7 +60,7 @@ export default function CategorySection({ title, active, categoryType }) {
           return (
             <div
               key={course._id || course.id || index}
-              onClick={() => handleCourseClick(course.lessonId || index, courseName)}
+              onClick={() => handleCourseClick(course)}
               className={`bg-[#302f5b] rounded-md text-white text-xs p-4 min-w-[220px] min-h-[220px] shadow-md hover:brightness-110 transition flex flex-col cursor-pointer relative ${course.tag === 'math' ? 'border-2 border-green-400' : 'border-2 border-purple-400'}`}
             >
               {/* Course Type Badge */}
@@ -105,10 +110,12 @@ export default function CategorySection({ title, active, categoryType }) {
 CategorySection.propTypes = {
   title: PropTypes.string.isRequired,
   active: PropTypes.bool.isRequired,
-  categoryType: PropTypes.oneOf(['math', 'vietnamese']).isRequired
+  categoryType: PropTypes.oneOf(['math', 'vietnamese']).isRequired,
+  note: PropTypes.string
 };
 
 CategorySection.defaultProps = {
   title: '',
-  active: false
+  active: false,
+  note: ''
 };

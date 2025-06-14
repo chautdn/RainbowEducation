@@ -176,7 +176,7 @@ export default function LessonDetailPage({ params }) {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-100 via-purple-50 to-pink-100">
+        <div className="h-screen overflow-y-auto bg-gradient-to-br from-sky-100 via-purple-50 to-pink-100">
             {/* Header */}
             <header className="bg-white/80 backdrop-blur-sm shadow-lg border-b-2 border-white/50">
                 <div className="max-w-7xl mx-auto px-4 py-4">

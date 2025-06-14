@@ -25,6 +25,8 @@ export const courseImages = {
     "https://res.cloudinary.com/dvcpy4kmm/image/upload/v1749407045/29VNwriting_uvrqin.jpg",
   "Tập viết số đếm":
     "https://res.cloudinary.com/dctmuwsdx/image/upload/v1749519393/number_oc4nqw.jpg",
+  "10 Loại động vật quanh chúng ta":
+    "https://res.cloudinary.com/dvcpy4kmm/image/upload/v1749901310/maxresdefault_muaka9.jpg",
 };
 
 // Courses by grade
@@ -122,8 +124,21 @@ export const readingCourses = [
     level: "Pre-K",
     duration: "30 phút",
     progress: 0,
-    tag: "vietnamese"
+    tag: "vietnamese",
+    lessonIndex: "1"
   },
+  {
+    id: 3,
+    title: "10 Loại động vật quanh chúng ta",
+    description: "Học cách nhận biết và phát âm các chữ cái tiếng Việt",
+    image: courseImages["10 Loại động vật quanh chúng ta"],
+    level: "Pre-K",
+    duration: "30 phút",
+    progress: 0,
+    tag: "vietnamese",
+    note: "animals",
+    lessonIndex: "3"
+  }
 ];
 
 export const writingCourses = [
@@ -135,7 +150,8 @@ export const writingCourses = [
     level: "Pre-K",
     duration: "45 phút",
     progress: 0,
-    tag: "vietnamese"
+    tag: "vietnamese",
+    lessonIndex:"2"
   },
   {
     id: 2,
