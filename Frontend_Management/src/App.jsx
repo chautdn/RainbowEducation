@@ -1,5 +1,5 @@
 import { Route, Routes } from "react-router-dom";
-
+import { ToastContainer } from "react-toastify";
 import AuthLayout from "./layouts/AuthLayout";
 import MainLayout from "./layouts/MainLayout";
 
@@ -23,8 +23,10 @@ import { SettingsPage } from "./pages/SettingsPage/SettingsPage";
 import Lesson1 from './pages/lesson-detail/vietnamese/Lesson1';
 import Lesson2 from './pages/lesson-detail/vietnamese/Lesson2';
 
+
 function App() {
   return (
+    <>
     <Routes>
       <Route element={<AuthLayout />}>
         <Route path="/login" element={<LoginPage />} />
@@ -50,10 +52,15 @@ function App() {
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/lesson-detail/vietnamese/lesson1" element={<Lesson1 />} />
         <Route path="/lesson-detail/vietnamese/lesson2" element={<Lesson2 />} />
+        {/* group chu cai */}
+
       </Route>
 
       <Route path="*" element={<LoginPage />} />
     </Routes>
+
+    <ToastContainer />
+    </>
   );
 }
 
