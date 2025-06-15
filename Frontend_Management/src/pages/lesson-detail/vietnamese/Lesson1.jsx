@@ -1,19 +1,18 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, Volume2, RotateCcw, Play, SkipBack, SkipForward} from "lucide-react";
+import { ArrowLeft, Volume2, Play, SkipBack, SkipForward, ChevronLeft, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-export default function LessonDetailPage({ params }) {
-    const [selectedLetter, setSelectedLetter] = useState("A");
+import "react-toastify/dist/ReactToastify.css";
+import { letterGroups } from "../../../data/courseData";
+import LessonCompleteModal from "../../../components/sharedComponents/LessonCompleteModal";
+
+export default function LessonDetailPage() {
+    const [selectedLetter, setSelectedLetter] = useState(letterGroups[0].letters[0]);
     const [isAnimating, setIsAnimating] = useState(false);
     const [animationStep, setAnimationStep] = useState(0);
     const [isPlaying, setIsPlaying] = useState(false);
-    const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
+    const [currentGroup, setCurrentGroup] = useState(0);
     const navigate = useNavigate();
-    const vietnameseLetters = [
-        "A", "Ă", "Â", "B", "C", "D", "Đ", "E", "Ê", "G", "H",
-        "I", "K", "L", "M", "N", "O", "Ô", "Ơ", "P", "Q", "R",
-        "S", "T", "U", "Ư", "V", "X", "Y",
-    ];
-
+    const [showModal, setShowModal] = useState(false);
     const letterVideos = {
         "A": "https://res.cloudinary.com/dvcpy4kmm/video/upload/v1749178684/chu_a_yfojk7.mp4",
         "Ă": "https://res.cloudinary.com/dvcpy4kmm/video/upload/v1749178684/chu_ă_u25h2u.mp4",
@@ -46,7 +45,6 @@ export default function LessonDetailPage({ params }) {
         "Y": "https://res.cloudinary.com/dvcpy4kmm/video/upload/v1749185317/chu_y_xkb1kq.mp4",
     };
 
-    // CSS styles để cố định kích thước
     const letterContainerStyle = {
         width: '400px',
         height: '400px',
@@ -106,10 +104,22 @@ export default function LessonDetailPage({ params }) {
     }, [selectedLetter]);
 
     useEffect(() => {
-        speechSynthesis.onvoiceschanged = () => {
-            console.log("Loaded voices:", speechSynthesis.getVoices());
-        };
-    }, []);
+        const video = document.getElementById("letterVideo");
+        console.log("Video element:", video);
+        console.log("Selected letter:", selectedLetter);
+        console.log("Is playing:", isPlaying);
+
+        if (video && selectedLetter === "Y" && isPlaying) {
+            const handleVideoEnd = () => {
+                setShowModal(true); // <-- Hiển thị modal khi video kết thúc
+            };
+
+            video.addEventListener("ended", handleVideoEnd);
+            return () => {
+                video.removeEventListener("ended", handleVideoEnd);
+            };
+        }
+    }, [selectedLetter, isPlaying]);
 
     const handleLetterSelect = (letter) => {
         setSelectedLetter(letter);
@@ -131,37 +141,43 @@ export default function LessonDetailPage({ params }) {
     };
 
     const handlePrevVideo = () => {
-        const currentIndex = vietnameseLetters.indexOf(selectedLetter);
+        const currentIndex = letterGroups[currentGroup].letters.indexOf(selectedLetter);
         if (currentIndex > 0) {
-            const prevLetter = vietnameseLetters[currentIndex - 1];
+            const prevLetter = letterGroups[currentGroup].letters[currentIndex - 1];
             setSelectedLetter(prevLetter);
             setIsPlaying(true);
         }
     };
 
     const handleNextVideo = () => {
-        const currentIndex = vietnameseLetters.indexOf(selectedLetter);
-        if (currentIndex < vietnameseLetters.length - 1) {
-            const nextLetter = vietnameseLetters[currentIndex + 1];
+        const currentIndex = letterGroups[currentGroup].letters.indexOf(selectedLetter);
+        if (currentIndex < letterGroups[currentGroup].letters.length - 1) {
+            const nextLetter = letterGroups[currentGroup].letters[currentIndex + 1];
             setSelectedLetter(nextLetter);
             setIsPlaying(true);
         }
     };
 
-    const handleReplay = () => {
-        setIsPlaying(false);
-        setTimeout(() => {
-            setIsPlaying(true);
-        }, 100);
+    const handlePrevGroup = () => {
+        if (currentGroup > 0) {
+            setCurrentGroup(currentGroup - 1);
+            setSelectedLetter(letterGroups[currentGroup - 1].letters[0]);
+        }
+    };
+
+    const handleNextGroup = () => {
+        if (currentGroup < letterGroups.length - 1) {
+            setCurrentGroup(currentGroup + 1);
+            setSelectedLetter(letterGroups[currentGroup + 1].letters[0]);
+        }
     };
 
     const handleNavigateBack = () => {
         navigate("/curriculum");
-        console.log("Navigate back to curriculum");
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-100 via-purple-50 to-pink-100">
+        <div className="h-screen overflow-y-auto bg-gradient-to-br from-sky-100 via-purple-50 to-pink-100">
             {/* Header */}
             <header className="bg-white/80 backdrop-blur-sm shadow-lg border-b-2 border-white/50">
                 <div className="max-w-7xl mx-auto px-4 py-4">
@@ -182,20 +198,56 @@ export default function LessonDetailPage({ params }) {
             {/* Main Content */}
             <main className="max-w-7xl mx-auto px-4 py-8">
                 <div className="grid lg:grid-cols-12 gap-8" style={{ height: 'calc(100vh - 200px)' }}>
-                    {/* Left - Alphabet Grid (3/12 columns) */}
+                    {/* Left - Alphabet Grid */}
                     <div className="lg:col-span-3 bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl border-2 border-white/50 p-6">
-                        <h2 className="text-xl font-bold text-gray-800 mb-4">Chọn chữ cái</h2>
-                        <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-3 gap-2 overflow-y-auto" style={{ height: 'calc(100% - 120px)' }}>
-                            {vietnameseLetters.map((letter) => (
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-xl font-bold text-gray-800">{letterGroups[currentGroup].name}</h2>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={handlePrevGroup}
+                                    disabled={currentGroup === 0}
+                                    className={`p-2 rounded-full ${currentGroup === 0
+                                            ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                                            : "bg-purple-500 text-white hover:bg-purple-600"
+                                        }`}
+                                >
+                                    <ChevronLeft className="w-5 h-5" />
+                                </button>
+                                <button
+                                    onClick={handleNextGroup}
+                                    disabled={currentGroup === letterGroups.length - 1}
+                                    className={`p-2 rounded-full ${currentGroup === letterGroups.length - 1
+                                            ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                                            : "bg-purple-500 text-white hover:bg-purple-600"
+                                        }`}
+                                >
+                                    <ChevronRight className="w-5 h-5" />
+                                </button>
+                            </div>
+                        </div>
+                        <p className="text-sm text-gray-600 mb-4">{letterGroups[currentGroup].description}</p>
+
+                        {/* Alphabet Grid - Vertical Column */}
+                        <div className="flex flex-col gap-6 overflow-y-auto items-center justify-center" style={{ height: 'calc(100% - 120px)' }}>
+                            {letterGroups[currentGroup].letters.map((letter) => (
                                 <button
                                     key={letter}
                                     onClick={() => handleLetterSelect(letter)}
-                                    className={`aspect-square rounded-2xl font-bold text-lg transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 ${selectedLetter === letter
+                                    className={`rounded-3xl font-bold text-7xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center justify-center ${selectedLetter === letter
                                             ? "bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-2xl scale-105"
                                             : "bg-gradient-to-br from-yellow-200 to-orange-200 text-gray-700 hover:from-yellow-300 hover:to-orange-300"
                                         }`}
+                                    style={{
+                                        height: '180px',     // Tăng chiều cao cho mỗi button
+                                        width: '90%',       // Chiều rộng đầy đủ
+                                        boxShadow: selectedLetter === letter
+                                            ? '0 10px 25px -5px rgba(59, 130, 246, 0.5)'
+                                            : '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                                    }}
                                 >
-                                    {letter}
+                                    <span className="transform hover:scale-110 transition-transform duration-300">
+                                        {letter}
+                                    </span>
                                 </button>
                             ))}
                         </div>
@@ -205,21 +257,21 @@ export default function LessonDetailPage({ params }) {
                             <div className="flex items-center justify-between">
                                 <span className="text-xs font-semibold text-gray-700">Tiến độ</span>
                                 <span className="text-xs font-bold text-green-600">
-                                    {vietnameseLetters.indexOf(selectedLetter) + 1}/{vietnameseLetters.length}
+                                    {letterGroups[currentGroup].letters.indexOf(selectedLetter) + 1}/{letterGroups[currentGroup].letters.length}
                                 </span>
                             </div>
                             <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
                                 <div
                                     className="bg-gradient-to-r from-green-400 to-blue-500 h-2 rounded-full transition-all duration-500"
                                     style={{
-                                        width: ((vietnameseLetters.indexOf(selectedLetter) + 1) / vietnameseLetters.length) * 100 + "%",
+                                        width: ((letterGroups[currentGroup].letters.indexOf(selectedLetter) + 1) / letterGroups[currentGroup].letters.length) * 100 + "%",
                                     }}
                                 ></div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Right - Animation/Video (9/12 columns) */}
+                    {/* Right - Animation/Video */}
                     <div className="lg:col-span-9 bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl border-2 border-white/50 p-8 flex flex-col">
                         <div className="flex items-center justify-between mb-6">
                             <h2 className="text-3xl font-bold text-gray-800">Học đọc chữ</h2>
@@ -261,16 +313,9 @@ export default function LessonDetailPage({ params }) {
                                             onClick={handlePrevVideo}
                                             className="p-4 bg-blue-500 hover:bg-blue-600 text-white rounded-full shadow-lg transform hover:scale-105 transition-all"
                                             title="Chữ trước"
-                                            disabled={vietnameseLetters.indexOf(selectedLetter) === 0}
+                                            disabled={letterGroups[currentGroup].letters.indexOf(selectedLetter) === 0}
                                         >
                                             <SkipBack className="w-6 h-6" />
-                                        </button>
-                                        <button
-                                            onClick={handleReplay}
-                                            className="p-4 bg-purple-500 hover:bg-purple-600 text-white rounded-full shadow-lg transform hover:scale-105 transition-all"
-                                            title="Xem lại"
-                                        >
-                                            <RotateCcw className="w-6 h-6" />
                                         </button>
                                         <button
                                             onClick={() => {
@@ -292,7 +337,7 @@ export default function LessonDetailPage({ params }) {
                                             onClick={handleNextVideo}
                                             className="p-4 bg-blue-500 hover:bg-blue-600 text-white rounded-full shadow-lg transform hover:scale-105 transition-all"
                                             title="Chữ tiếp theo"
-                                            disabled={vietnameseLetters.indexOf(selectedLetter) === vietnameseLetters.length - 1}
+                                            disabled={letterGroups[currentGroup].letters.indexOf(selectedLetter) === letterGroups[currentGroup].letters.length - 1}
                                         >
                                             <SkipForward className="w-6 h-6" />
                                         </button>
@@ -300,7 +345,6 @@ export default function LessonDetailPage({ params }) {
                                 </div>
                             ) : (
                                 <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-3xl border-2 border-dashed border-orange-200 relative overflow-hidden flex items-center justify-center">
-                                    {/* Container cố định kích thước cho chữ cái */}
                                     <div style={letterContainerStyle}>
                                         <div
                                             className={`absolute inset-0 flex items-center justify-center transition-all duration-1000 ${isAnimating ? "text-blue-500" : "text-gray-700"
@@ -310,15 +354,11 @@ export default function LessonDetailPage({ params }) {
                                                 filter: isAnimating ? "drop-shadow(0 0 30px rgba(59,130,246,0.5))" : "none",
                                             }}
                                         >
-                                            <span
-                                                className="select-none"
-                                                style={letterTextStyle}
-                                            >
+                                            <span className="select-none" style={letterTextStyle}>
                                                 {selectedLetter}
                                             </span>
                                         </div>
 
-                                        {/* Animation dots với position cố định */}
                                         {isAnimating && (
                                             <div className="absolute inset-0 pointer-events-none">
                                                 <div
@@ -352,7 +392,6 @@ export default function LessonDetailPage({ params }) {
                                         )}
                                     </div>
 
-                                    {/* Decorative elements với position cố định */}
                                     <div className="absolute top-6 left-6 text-3xl animate-bounce">✨</div>
                                     <div className="absolute top-6 right-6 text-3xl animate-bounce" style={{ animationDelay: "0.5s" }}>🌟</div>
                                     <div className="absolute bottom-6 left-6 text-3xl animate-bounce" style={{ animationDelay: "1s" }}>🎨</div>
@@ -372,6 +411,12 @@ export default function LessonDetailPage({ params }) {
                         </div>
                     </div>
                 </div>
+                {showModal && (
+                    <LessonCompleteModal
+                        onClose={() => setShowModal(false)}
+                        onContinuePath={`/lesson-detail/vietnamese/lesson2`} // hoặc path bất kỳ bạn muốn
+                    />
+                )}
             </main>
         </div>
     );
