@@ -20,47 +20,92 @@ import { ShapeRace } from "./pages";
 import GamePage from "./pages/GamePage/GamePage";
 import { ParentDashboard } from "./pages/ParentDashboard/ParentDashboard";
 import { SettingsPage } from "./pages/SettingsPage/SettingsPage";
-import Lesson1 from './pages/lesson-detail/vietnamese/Lesson1';
-import Lesson2 from './pages/lesson-detail/vietnamese/Lesson2';
-import NumberLessonPage from './pages/lesson-detail/numbers/Lesson1';
-import AnimalLessonPage from './pages/lesson-detail/animal/lesson1';
+import Lesson1 from "./pages/lesson-detail/vietnamese/Lesson1";
+import Lesson2 from "./pages/lesson-detail/vietnamese/Lesson2";
+import NumberLessonPage from "./pages/lesson-detail/numbers/Lesson1";
+import NumberReadingLessonPage from "./pages/lesson-detail/numbers/Lesson2";
+import AnimalLessonPage from "./pages/lesson-detail/animal/lesson1";
+
 function App() {
   return (
     <>
-    <Routes>
-      <Route element={<AuthLayout />}>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignUpPage />} />
-        <Route path="/verify-email" element={<EmailVerificationPage />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
-      </Route>
+      <Routes>
+        <Route element={<AuthLayout />}>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignUpPage />} />
+          <Route path="/verify-email" element={<EmailVerificationPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route
+            path="/reset-password/:token"
+            element={<ResetPasswordPage />}
+          />
+        </Route>
 
-      <Route element={<MainLayout />}>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/landingpage" element={<LandingPage />} />
-        <Route path="/home" element={<HomePage />} />
-        <Route path="/curriculum" element={<CurriculumPage />} />
-        <Route path="/game-lessons" element={<GameLessons />} />
-        <Route path="/game-lessons/games/:id" element={<AllGames />} />
-        <Route path="/all-games/:id" element={<AllGames />} />
-        <Route path="/game-lessons/game-lesson/:id" element={<LessonPage />} />
-        <Route path="/game-lessons/games/shapes/:id" element={<ShapeRace />} />
-        <Route path="/game-lessons/games/counting/:id" element={<GamePage />} />
-        <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/parent-dashboard" element={<ParentDashboard />} />
-        <Route path="/settings" element={<SettingsPage />} />
-        <Route path="/lesson-detail/vietnamese/lesson1" element={<Lesson1 />} />
-        <Route path="/lesson-detail/vietnamese/lesson2" element={<Lesson2 />} />
-        <Route path="/lesson-detail/numbers/lesson1" element={<NumberLessonPage />} />
-        <Route path="/lesson-detail/animal/lesson3" element={<AnimalLessonPage />} />
+        <Route element={<MainLayout />}>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/landingpage" element={<LandingPage />} />
+          <Route path="/home" element={<HomePage />} />
+          <Route path="/curriculum" element={<CurriculumPage />} />
+          <Route path="/game-lessons" element={<GameLessons />} />
+          <Route path="/game-lessons/games/:id" element={<AllGames />} />
+          <Route path="/all-games/:id" element={<AllGames />} />
+          <Route
+            path="/game-lessons/game-lesson/:id"
+            element={<LessonPage />}
+          />
+          <Route
+            path="/game-lessons/games/shapes/:id"
+            element={<ShapeRace />}
+          />
+          <Route
+            path="/game-lessons/games/counting/:id"
+            element={<GamePage />}
+          />
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/parent-dashboard" element={<ParentDashboard />} />
+          <Route path="/settings" element={<SettingsPage />} />
 
-      </Route>
+          {/* Vietnamese Lessons */}
+          <Route
+            path="/lesson-detail/vietnamese/lesson1"
+            element={<Lesson1 />}
+          />
+          <Route
+            path="/lesson-detail/vietnamese/lesson2"
+            element={<Lesson2 />}
+          />
 
-      <Route path="*" element={<LoginPage />} />
-    </Routes>
+          {/* Math Lessons - NEW ROUTES */}
+          <Route
+            path="/lesson-detail/math/lesson4"
+            element={<NumberLessonPage />}
+          />
+          <Route
+            path="/lesson-detail/math/lesson5"
+            element={<NumberReadingLessonPage />}
+          />
 
-    <ToastContainer />
+          {/* Legacy number routes - keep for backward compatibility */}
+          <Route
+            path="/lesson-detail/numbers/lesson4"
+            element={<NumberLessonPage />}
+          />
+          <Route
+            path="/lesson-detail/numbers/lesson5"
+            element={<NumberReadingLessonPage />}
+          />
+
+          {/* Animal Lessons */}
+          <Route
+            path="/lesson-detail/animal/lesson3"
+            element={<AnimalLessonPage />}
+          />
+        </Route>
+
+        <Route path="*" element={<LoginPage />} />
+      </Routes>
+
+      <ToastContainer />
     </>
   );
 }
