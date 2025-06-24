@@ -85,7 +85,7 @@ export default function NumberLessonPage() {
 
     useEffect(() => {
         speechSynthesis.onvoiceschanged = () => {
-            console.log("Loaded voices:", speechSynthesis.getVoices());
+            // Voices loaded
         };
     }, []);
 

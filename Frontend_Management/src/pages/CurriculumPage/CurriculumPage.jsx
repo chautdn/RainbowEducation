@@ -11,6 +11,7 @@ export const CurriculumPage = () => {
     const learningPathRef = useRef(null);
     const mathCategoryRef = useRef(null);
     const vietnameseCategoryRef = useRef(null);
+    const animalsCategoryRef = useRef(null);
     const [isCompact, setIsCompact] = useState(false);
     const [activeTab, setActiveTab] = useState("learning");
 
@@ -27,6 +28,7 @@ export const CurriculumPage = () => {
                 { key: "learning", ref: learningPathRef },
                 { key: "math", ref: mathCategoryRef },
                 { key: "vietnamese", ref: vietnameseCategoryRef },
+                { key: "animals", ref: animalsCategoryRef },
             ];
             let found = null;
             let maxVisible = 0;
@@ -101,6 +103,9 @@ export const CurriculumPage = () => {
         if (section === "vietnamese" && vietnameseCategoryRef.current) {
             smoothScrollTo(vietnameseCategoryRef.current);
         }
+        if (section === "animals" && animalsCategoryRef.current) {
+            smoothScrollTo(animalsCategoryRef.current);
+        }
     };
 
     return (
@@ -171,6 +176,35 @@ export const CurriculumPage = () => {
                     <div className="p-6 max-w-7xl mx-auto" ref={vietnameseCategoryRef}>
                         <div className="bg-gradient-to-br from-pink-100/90 to-rose-100/90 backdrop-blur-sm rounded-3xl shadow-2xl border-2 border-white/50 p-8 mb-8">
                             <CategorySection title="Chương trình Tiếng Việt" active={activeTab === "vietnamese"} categoryType="vietnamese" />
+                        </div>
+
+                    </div>
+
+                    <div className="p-6 max-w-7xl mx-auto" ref={animalsCategoryRef}>
+                        {/* Animal Lessons Section */}
+                        <div className="bg-gradient-to-br from-purple-100/90 to-violet-100/90 backdrop-blur-sm rounded-3xl shadow-2xl border-2 border-white/50 p-8 mb-8 relative overflow-hidden">
+                            {/* Background decoration */}
+                            <div className="absolute top-4 right-4 text-6xl opacity-20">🐾</div>
+                            <div className="absolute bottom-4 left-4 text-5xl opacity-20">🦁</div>
+                            <div className="absolute top-1/2 right-1/3 text-4xl opacity-15">🐘</div>
+                            
+                            <CategorySection title="🐾 Bài học về động vật 🐾" active={activeTab === "animals"} categoryType="vietnamese" note="animals" />
+                        </div>
+
+                        {/* Fun Animals Elements */}
+                        <div className="flex justify-center space-x-6 mt-8 mb-8">
+                            <div className="bg-purple-300 p-6 rounded-full shadow-xl animate-bounce border-2 border-white">
+                                🐶
+                            </div>
+                            <div className="bg-violet-300 p-6 rounded-full shadow-xl animate-bounce border-2 border-white" style={{ animationDelay: '0.2s' }}>
+                                🐱
+                            </div>
+                            <div className="bg-indigo-300 p-6 rounded-full shadow-xl animate-bounce border-2 border-white" style={{ animationDelay: '0.4s' }}>
+                                🐘
+                            </div>
+                            <div className="bg-purple-400 p-6 rounded-full shadow-xl animate-bounce border-2 border-white" style={{ animationDelay: '0.6s' }}>
+                                🦁
+                            </div>
                         </div>
 
                         {/* Fun Vietnamese Elements */}

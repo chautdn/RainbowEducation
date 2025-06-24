@@ -2,6 +2,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import PropTypes from "prop-types";
 import { getCourseNamesByGrade, courseImages } from "../../data/courseData";
+import { Lock, Crown } from "lucide-react";
 
 export default function CategorySection({ title, active, categoryType, note }) {
   const navigate = useNavigate();
@@ -80,38 +81,69 @@ export default function CategorySection({ title, active, categoryType, note }) {
             <div
               key={course._id || course.id || index}
               onClick={() => handleCourseClick(course)}
-              className={`bg-[#302f5b] rounded-md text-white text-xs p-4 min-w-[220px] min-h-[220px] shadow-md hover:brightness-110 transition flex flex-col cursor-pointer relative ${
-                course.tag === "math"
-                  ? "border-2 border-green-400"
-                  : "border-2 border-purple-400"
-              }`}
+                                            className={`bg-[#302f5b] rounded-md text-white text-xs p-4 min-w-[220px] min-h-[220px] shadow-md hover:brightness-110 transition-all duration-300 flex flex-col cursor-pointer relative ${
+                 course.tag === "math"
+                   ? "border-2 border-green-400"
+                   : "border-2 border-purple-400"
+                } ${!course.isFree ? 'ring-4 ring-red-400 ring-opacity-50 shadow-xl' : ''}`}
             >
-              {/* Course Type Badge */}
-              <div className="absolute top-2 right-2 text-lg">{getIcon()}</div>
+                             {/* Course Type Badge */}
+               <div className="absolute top-2 right-2 text-lg">{getIcon()}</div>
+               
+               {/* Payment Status Badge */}
+               {!course.isFree && (
+                 <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-lg">
+                   <Lock size={12} />
+                   PREMIUM
+                 </div>
+               )}
+               
+               {course.isFree && (
+                 <div className="absolute top-2 left-2 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-bold shadow-lg">
+                   MIỄN PHÍ
+                 </div>
+               )}
 
-              {courseImages[courseName] ? (
-                <img
-                  src={courseImages[courseName]}
-                  alt={courseName}
-                  className="w-full h-32 object-cover rounded mb-4"
-                />
-              ) : (
-                <div
-                  className={`w-full h-32 rounded mb-4 flex items-center justify-center text-4xl
-                  ${
-                    categoryType === "math"
-                      ? "bg-gradient-to-br from-green-500 to-blue-500"
-                      : "bg-gradient-to-br from-purple-500 to-pink-500"
-                  }
-                `}
-                >
-                  {getIcon()}
-                </div>
+                              {courseImages[courseName] ? (
+                  <img
+                    src={courseImages[courseName]}
+                    alt={courseName}
+                    className={`w-full h-32 object-cover rounded mb-4 transition-all duration-300 ${
+                      !course.isFree ? 'blur-sm hover:blur-none' : ''
+                    }`}
+                  />
+                ) : (
+                                 <div
+                   className={`w-full h-32 rounded mb-4 flex items-center justify-center text-4xl transition-all duration-300
+                   ${
+                     categoryType === "math"
+                       ? "bg-gradient-to-br from-green-500 to-blue-500"
+                       : "bg-gradient-to-br from-purple-500 to-pink-500"
+                   }
+                   ${!course.isFree ? 'blur-sm hover:blur-none' : ''}
+                 `}
+                 >
+                   {getIcon()}
+                 </div>
               )}
 
-              <div className="font-semibold text-base mb-2">
-                {course.title || courseName}
-              </div>
+                             <div className="font-semibold text-base mb-2">
+                 {course.title || courseName}
+               </div>
+               
+               {/* Payment Overlay */}
+               {!course.isFree && (
+                 <div className="absolute inset-0 bg-black bg-opacity-60 rounded-md flex flex-col items-center justify-center text-white opacity-0 hover:opacity-100 transition-opacity duration-300 backdrop-blur-sm">
+                   <Lock size={32} className="mb-2" />
+                   <div className="text-sm font-bold">Cần thanh toán</div>
+                   <div className="text-xs font-semibold">
+                     {course.price ? `${course.price.toLocaleString('vi-VN')} VND` : '75.000 VND'}
+                   </div>
+                   <div className="text-xs mt-2 text-center px-2">
+                     Nhấn để mua và truy cập bài học
+                   </div>
+                 </div>
+               )}
               <div className="text-xs">{getDescription()}</div>
 
               {/* Progress indicator */}

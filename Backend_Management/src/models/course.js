@@ -54,6 +54,10 @@ const courseSchema = new mongoose.Schema({
   updatedAt: {
     type: Date,
     default: Date.now
+  },
+  isPurchased: {
+    type: Boolean,
+    default: false
   }
 }, {
   timestamps: true

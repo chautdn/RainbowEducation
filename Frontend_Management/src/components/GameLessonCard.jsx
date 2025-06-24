@@ -2,8 +2,8 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 
 const GameLessonCard = (props) => {
-    const { title, description, link, gameLessonId, gamesCount } = props.game
-    console.log({ props })
+    const { title, description, link, gameLessonId, gamesCount } = props.game;
+    
     return (
         <div className="text-center bg-gradient-to-r from-blue-200 via-yellow-100 to-pink-200">
             <h3 className="text-2xl font-bold mb-2">{title}</h3>

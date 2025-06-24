@@ -1,6 +1,11 @@
 import { useState, useRef, useEffect } from "react"
-import { ChevronLeft, ChevronRight, Volume2, ArrowLeft } from "lucide-react"
+import { ChevronLeft, ChevronRight, Volume2, ArrowLeft, Lock } from "lucide-react"
 import { useNavigate } from "react-router-dom"
+import { PaymentService } from "../../../services/paymentService"
+import PaymentModal from "../../../components/sharedComponents/PaymentModal"
+import { toast } from "react-toastify"
+import { useAuthStore } from "../../../store/authStore"
+import { useLearningProgress } from "../../../hooks/useLearningProgress"
 const animals = [
     {
         id: 1,
@@ -88,6 +93,31 @@ export default function LessonDetailPage() {
     const [currentIndex, setCurrentIndex] = useState(0)
     const audioRef = useRef(new Audio())
     const navigate = useNavigate()
+    const [hasAccess, setHasAccess] = useState(false)
+    const [isLoading, setIsLoading] = useState(true)
+    const [showPaymentModal, setShowPaymentModal] = useState(false)
+    const { user, isAuthenticated } = useAuthStore()
+    const { completeLesson, getLessonProgress } = useLearningProgress()
+    const [lessonStartTime] = useState(Date.now())
+    
+    const lessonInfo = {
+        type: 'animal',
+        id: '1',
+        title: '10 Loại động vật quanh chúng ta',
+        price: PaymentService.getLessonPrice('animal', '1')
+    }
+
+    // Track lesson completion
+    const checkLessonCompletion = () => {
+        const timeSpent = Math.round((Date.now() - lessonStartTime) / 1000)
+        const score = Math.round((currentIndex + 1) / animals.length * 100)
+        
+        if (currentIndex === animals.length - 1) {
+            // Completed all animals
+            completeLesson('animal', '1', score, timeSpent)
+            toast.success('🎉 Chúc mừng! Bạn đã hoàn thành bài học về động vật!')
+        }
+    }
     // Hàm dừng âm thanh
     const stopSound = () => {
         if (audioRef.current) {
@@ -98,7 +128,13 @@ export default function LessonDetailPage() {
 
     const nextCard = () => {
         stopSound() // Dừng âm thanh trước khi chuyển
-        setCurrentIndex(currentIndex < animals.length - 1 ? currentIndex + 1 : 0)
+        const nextIndex = currentIndex < animals.length - 1 ? currentIndex + 1 : 0
+        setCurrentIndex(nextIndex)
+        
+        // Check completion when reaching the last animal
+        if (nextIndex === animals.length - 1) {
+            setTimeout(checkLessonCompletion, 2000) // Delay to let user see the last animal
+        }
     }
 
     const prevCard = () => {
@@ -130,15 +166,135 @@ export default function LessonDetailPage() {
         }
     }
 
-    // Cleanup khi component unmount
+    // Check lesson access on component mount
+    useEffect(() => {
+        const checkAccess = async () => {
+            if (!isAuthenticated) {
+                setIsLoading(false)
+                return
+            }
+            
+            try {
+                const accessData = await PaymentService.checkLessonAccess(lessonInfo.type, lessonInfo.id)
+                setHasAccess(accessData.hasAccess)
+            } catch (error) {
+                console.error('Error checking access:', error)
+                toast.error('Không thể kiểm tra quyền truy cập bài học')
+            } finally {
+                setIsLoading(false)
+            }
+        }
+        
+        checkAccess()
+    }, [isAuthenticated])
+
+    // Cleanup khi component unmount và track progress
     useEffect(() => {
         return () => {
             stopSound()
+            // Save progress when leaving the lesson
+            const timeSpent = Math.round((Date.now() - lessonStartTime) / 1000)
+            const progressPercent = Math.round(((currentIndex + 1) / animals.length) * 100)
+            
+            // Save partial progress even if not completed
+            if (timeSpent > 10) { // Only save if spent more than 10 seconds
+                sessionStorage.setItem('animalLessonProgress', JSON.stringify({
+                    currentIndex,
+                    timeSpent,
+                    progressPercent,
+                    lastVisited: Date.now()
+                }))
+            }
         }
-    }, [])
+    }, [currentIndex, lessonStartTime])
     const handleNavigateBack = () => {
         navigate("/curriculum")
     }
+
+    const handlePaymentSuccess = () => {
+        setHasAccess(true)
+        toast.success('Bạn đã có quyền truy cập vào bài học này!')
+    }
+
+    const handlePurchaseClick = () => {
+        if (!isAuthenticated) {
+            //toast.error('Vui lòng đăng nhập để mua bài học')
+            return
+        }
+        setShowPaymentModal(true)
+    }
+
+    // Loading state
+    if (isLoading) {
+        return (
+            <div className="h-screen bg-gradient-to-br from-sky-100 via-purple-50 to-pink-100 flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+                    <p className="text-purple-600 font-semibold">Đang kiểm tra quyền truy cập...</p>
+                </div>
+            </div>
+        )
+    }
+
+    // Access denied state
+    if (!isAuthenticated && !hasAccess) {
+        return (
+            <div className="h-screen bg-gradient-to-br from-sky-100 via-purple-50 to-pink-100">
+                <button
+                    onClick={handleNavigateBack}
+                    className="fixed top-4 left-4 z-50 bg-white hover:bg-gray-100 text-purple-600 p-3 rounded-full shadow-lg transition-all duration-200 hover:scale-110 flex items-center gap-2"
+                    aria-label="Trở về"
+                >
+                    <ArrowLeft size={24} />
+                    <span className="font-semibold hidden sm:inline">Trở về</span>
+                </button>
+
+                <div className="max-w-4xl mx-auto px-4 py-8 flex items-center justify-center min-h-screen">
+                    <div className="bg-white rounded-3xl shadow-2xl p-8 text-center max-w-md w-full">
+                        <div className="mb-6">
+                            <Lock className="mx-auto text-purple-600 mb-4" size={64} />
+                            <h2 className="text-2xl font-bold text-gray-800 mb-2">Bài học cần thanh toán</h2>
+                            <p className="text-gray-600 mb-4">
+                                Để truy cập vào bài học `{lessonInfo.title}``, bạn cần thanh toán phí học tập.
+                            </p>
+                        </div>
+
+                        <div className="bg-purple-50 rounded-2xl p-4 mb-6">
+                            <h3 className="font-semibold text-purple-800 mb-2">{lessonInfo.title}</h3>
+                            <div className="text-3xl font-bold text-purple-600 mb-2">
+                                {PaymentService.formatPrice(lessonInfo.price)}
+                            </div>
+                            <div className="text-sm text-purple-600">
+                                ✅ Truy cập không giới hạn trong 30 ngày<br/>
+                                ✅ 10 loại động vật với âm thanh thật<br/>
+                                ✅ Học liệu chất lượng cao
+                            </div>
+                        </div>
+
+                        <button
+                            onClick={handlePurchaseClick}
+                            className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 px-6 rounded-xl hover:from-purple-700 hover:to-blue-700 transition-colors font-semibold"
+                        >
+                            Mua bài học ngay
+                        </button>
+                    </div>
+                </div>
+
+                <PaymentModal
+                    isOpen={showPaymentModal}
+                    onClose={() => setShowPaymentModal(false)}
+                    lesson={lessonInfo}
+                    onPaymentSuccess={handlePaymentSuccess}
+                />
+            </div>
+        )
+    }
+
+    // Not authenticated state
+    // if (!isAuthenticated) {
+    //     toast.error('Vui lòng đăng nhập để mua bài học')
+    //     return
+    // }
     return (
         <div className="h-screen overflow-y-auto bg-gradient-to-br from-sky-100 via-purple-50 to-pink-100">
             <button
@@ -156,6 +312,20 @@ export default function LessonDetailPage() {
                     <h1 className="text-4xl md:text-6xl font-bold text-purple-800 mb-4 font-comic">
                         🐾 Những Con Vật Quen Thuộc Quanh Ta 🐾
                     </h1>
+                </div>
+
+                {/* Progress Bar */}
+                <div className="max-w-md mx-auto mb-6">
+                    <div className="flex justify-between text-sm text-purple-600 mb-2">
+                        <span>Tiến độ bài học</span>
+                        <span>{Math.round(((currentIndex + 1) / animals.length) * 100)}%</span>
+                    </div>
+                    <div className="w-full bg-purple-200 rounded-full h-3">
+                        <div 
+                            className="bg-purple-600 h-3 rounded-full transition-all duration-500"
+                            style={{ width: `${((currentIndex + 1) / animals.length) * 100}%` }}
+                        ></div>
+                    </div>
                 </div>
 
                 {/* Navigation Buttons */}
@@ -267,6 +437,13 @@ export default function LessonDetailPage() {
           display: none;
         }
       `}</style>
+
+            <PaymentModal
+                isOpen={showPaymentModal}
+                onClose={() => setShowPaymentModal(false)}
+                lesson={lessonInfo}
+                onPaymentSuccess={handlePaymentSuccess}
+            />
         </div>
     )
 }

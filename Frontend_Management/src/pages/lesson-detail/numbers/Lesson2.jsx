@@ -8,13 +8,13 @@ import {
   SkipForward,
   BookOpen,
 } from "lucide-react";
-
+import { useNavigate } from "react-router-dom";
 export default function NumberReadingLessonPage() {
   const [selectedNumber, setSelectedNumber] = useState("0");
   const [isAnimating, setIsAnimating] = useState(false);
   const [animationStep, setAnimationStep] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-
+  const navigate = useNavigate();
   const numbers = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
 
   const numberVideos = {
@@ -89,11 +89,11 @@ export default function NumberReadingLessonPage() {
     }
   }, [selectedNumber]);
 
-  useEffect(() => {
-    speechSynthesis.onvoiceschanged = () => {
-      console.log("Loaded voices:", speechSynthesis.getVoices());
-    };
-  }, []);
+      useEffect(() => {
+        speechSynthesis.onvoiceschanged = () => {
+            // Voices loaded
+        };
+    }, []);
 
   const handleNumberSelect = (number) => {
     setSelectedNumber(number);
@@ -140,8 +140,7 @@ export default function NumberReadingLessonPage() {
   };
 
   const handleNavigateBack = () => {
-    // Simulate navigation back
-    console.log("Navigate back to curriculum");
+    navigate("/curriculum");
   };
 
   const getNumberName = (number) => {

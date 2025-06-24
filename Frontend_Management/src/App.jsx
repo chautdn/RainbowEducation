@@ -25,6 +25,7 @@ import Lesson2 from "./pages/lesson-detail/vietnamese/Lesson2";
 import NumberLessonPage from "./pages/lesson-detail/numbers/Lesson1";
 import NumberReadingLessonPage from "./pages/lesson-detail/numbers/Lesson2";
 import AnimalLessonPage from "./pages/lesson-detail/animal/lesson1";
+import LessonAccessDemo from "./components/sharedComponents/LessonAccessDemo";
 
 function App() {
   return (
@@ -97,8 +98,14 @@ function App() {
 
           {/* Animal Lessons */}
           <Route
-            path="/lesson-detail/animal/lesson3"
+            path="/lesson-detail/animal/lesson1"
             element={<AnimalLessonPage />}
+          />
+
+          {/* Payment Demo */}
+          <Route
+            path="/payment-demo"
+            element={<LessonAccessDemo />}
           />
         </Route>
 

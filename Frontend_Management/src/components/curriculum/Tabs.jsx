@@ -5,6 +5,7 @@ export default function Tabs({ onTabClick, activeTab }) {
     { key: "learning", label: "Lộ trình học tập" },
     { key: "math", label: "Chương trình toán học" },
     { key: "vietnamese", label: "Chương trình Tiếng Việt" },
+    { key: "animals", label: "🐾 Bài học về động vật" },
   ];
   return (
     <div className="flex justify-center gap-4 py-4">

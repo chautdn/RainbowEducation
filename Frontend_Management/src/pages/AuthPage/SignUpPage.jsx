@@ -28,7 +28,7 @@ const SignUpPage = () => {
         },
       });
     } catch (err) {
-      console.log(err);
+      // Handle signup error
     }
   };
 
@@ -57,7 +57,7 @@ const SignUpPage = () => {
           <div className="w-full flex justify-center mb-4">
             <GoogleLogin
               onSuccess={handleGoogleLogin}
-              onError={() => console.log("Google login failed")}
+              onError={() => {/* Google login failed */}}
               shape="rectangular"
               theme="outline"
               size="large"

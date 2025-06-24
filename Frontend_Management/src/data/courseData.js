@@ -23,11 +23,11 @@ export const courseImages = {
   "Nhận biết chữ cái": "https://res.cloudinary.com/dvcpy4kmm/image/upload/v1749406467/29vneseWords_f5etpu.jpg",
   "Tập viết chữ thường": "https://res.cloudinary.com/dvcpy4kmm/image/upload/v1749407045/29VNwriting_uvrqin.jpg",
   "10 Loại động vật quanh chúng ta": "https://res.cloudinary.com/dvcpy4kmm/image/upload/v1749901310/maxresdefault_muaka9.jpg",
-  
+
   // Math courses - ADD THESE NEW MAPPINGS
   "Học viết số": "https://res.cloudinary.com/dctmuwsdx/image/upload/v1749519393/number_oc4nqw.jpg",
   "Học đọc số": "https://res.cloudinary.com/dctmuwsdx/image/upload/v1749973950/number-reading_t9qfgx.jpg",
-  
+
   // Keep old mappings for backward compatibility
   "Tập viết số đếm": "https://res.cloudinary.com/dctmuwsdx/image/upload/v1749519393/number_oc4nqw.jpg",
   "Tập đọc số đếm": "https://res.cloudinary.com/dctmuwsdx/image/upload/v1749973950/number-reading_t9qfgx.jpg",
@@ -107,15 +107,43 @@ export const coursesByGrade = {
   ],
 };
 
-// Helper function to get course names by grade
-export function getCourseNamesByGrade(grade, categoryType) {
-  // Gom tất cả courses lại
-  const allCourses = [...readingCourses, ...writingCourses].filter(
-    (course) => course.level === grade
-  );
+// Animal courses  
+export const animalCourses = [
+  {
+    id: 1,
+    title: "10 Loại động vật quanh chúng ta",
+    description: "Học về các loại động vật quen thuộc với âm thanh thật",
+    image: courseImages["10 Loại động vật quanh chúng ta"],
+    level: "Pre-K",
+    duration: "25 phút",
+    progress: 0,
+    tag: "vietnamese",
+    note: "animals",
+    lessonId: "1",
+    lessonIndex: "1",
+    price: 75000,
+    isFree: false,
+  },
+];
 
-  // Lọc theo tag thay vì kiểm tra tiêu đề
-  return allCourses.filter((course) => course.tag === categoryType);
+// Helper function to get course names by grade
+export function getCourseNamesByGrade(grade, categoryType, note = null) {
+  // Gom tất cả courses lại
+  let allCourses = [...readingCourses, ...writingCourses];
+  
+  // Thêm animal courses nếu có note "animals"
+  if (note === "animals") {
+    allCourses = [...allCourses, ...animalCourses];
+  }
+  
+  const filteredByLevel = allCourses.filter((course) => course.level === grade);
+
+  // Lọc theo tag và note
+  return filteredByLevel.filter((course) => {
+    const matchesTag = course.tag === categoryType;
+    const matchesNote = note ? course.note === note : !course.note;
+    return matchesTag && matchesNote;
+  });
 }
 
 // Reading and writing courses for homepage
@@ -131,6 +159,8 @@ export const readingCourses = [
     tag: "vietnamese",
     lessonId: "1",
     lessonIndex: "1", // Add this
+    price: 0,
+    isFree: true,
   },
   {
     id: 2,
@@ -143,6 +173,8 @@ export const readingCourses = [
     tag: "math",
     lessonId: "5",
     lessonIndex: "5",
+    price: 0,
+    isFree: true,
   },
 ];
 
@@ -158,6 +190,8 @@ export const writingCourses = [
     tag: "vietnamese",
     lessonId: "2",
     lessonIndex: "2",
+    price: 0,
+    isFree: true,
   },
   {
     id: 2,
@@ -169,7 +203,9 @@ export const writingCourses = [
     progress: 0,
     tag: "math",
     lessonId: "4",
-    lessonIndex: "4", 
+    lessonIndex: "4",
+    price: 0,
+    isFree: true,
   },
 ];
 
@@ -177,61 +213,52 @@ export const letterGroups = [
   {
     id: 1,
     name: "Nhóm 1: Nguyên âm đầu tiên",
-    description: "Các nguyên âm đầu tiên – dễ phát âm",
     letters: ["A", "Ă", "Â"],
   },
   {
     id: 2,
     name: "Nhóm 2: Âm đầu quen thuộc",
-    description: "Âm đầu quen thuộc, dễ dùng với từ hình ảnh (Bóng, Cá, Đèn)",
     letters: ["B", "C", "D"],
   },
   {
     id: 3,
     name: "Nhóm 3: Phân biệt D – Đ",
-    description: "Phân biệt D – Đ, thêm nguyên âm Ê",
     letters: ["Đ", "E", "Ê"],
   },
   {
     id: 4,
     name: "Nhóm 4: Âm phụ và nguyên âm dài",
-    description: "Tăng âm phụ + nguyên âm dài I",
     letters: ["G", "H", "I"],
   },
   {
     id: 5,
     name: "Nhóm 5: Âm quen thuộc",
-    description: "M là 'Mẹ', âm quen với bé",
+
     letters: ["K", "L", "M"],
   },
   {
     id: 6,
     name: "Nhóm 6: Âm tròn môi",
-    description: "Âm tròn môi, dễ minh họa",
     letters: ["N", "O", "Ô"],
   },
   {
     id: 7,
     name: "Nhóm 7: Âm minh họa",
-    description: "Có thể minh họa bằng tranh (Ô, Phin, Quả)",
     letters: ["Ơ", "P", "Q"],
   },
   {
     id: 8,
     name: "Nhóm 8: Âm nổi bật",
-    description: "Các âm 'nổi bật', quen thuộc",
     letters: ["R", "S", "T"],
   },
   {
     id: 9,
     name: "Nhóm 9: Âm môi",
-    description: "Âm môi, dễ hát và phát âm chậm",
     letters: ["U", "Ư", "V"],
   },
   {
     id: 10,
     name: "Nhóm 10: Kết thúc",
-    description: "Kết thúc, dễ nghe, dễ minh họa (Xe, Yêu)",
     letters: ["X", "Y"],
   },
 ];

@@ -1,7 +1,9 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { ArrowLeft, Volume2, RotateCcw, Play, SkipBack, SkipForward, ChevronLeft, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { letterGroups } from "../../../data/courseData";
+import { useLearningProgress } from "../../../hooks/useLearningProgress";
+import LessonCompleteModal from "../../../components/sharedComponents/LessonCompleteModal";
 
 export default function LessonDetailPage({ params }) {
     const navigate = useNavigate();
@@ -10,6 +12,19 @@ export default function LessonDetailPage({ params }) {
     const [animationStep, setAnimationStep] = useState(0);
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentGroup, setCurrentGroup] = useState(0);
+    const [completedLetters, setCompletedLetters] = useState(new Set());
+    const [lessonProgress, setLessonProgress] = useState(0);
+    const [showResumeMessage, setShowResumeMessage] = useState(false);
+    const [resumeReason, setResumeReason] = useState('');
+    const [showModal, setShowModal] = useState(false);
+    
+    // Progress tracking
+    const { 
+        startLesson, 
+        completeLesson, 
+        updateLessonProgress,
+        getLessonProgress 
+    } = useLearningProgress();
 
     const vietnameseLetters = [
         "A", "Ă", "Â", "B", "C", "D", "Đ", "E", "Ê", "G", "H",
@@ -98,6 +113,33 @@ export default function LessonDetailPage({ params }) {
         }, 800);
     };
 
+    // Initialize lesson progress on component mount
+    useEffect(() => {
+        // Set lesson start time for time tracking
+        sessionStorage.setItem('lessonStartTime', Date.now().toString());
+        
+        // Load existing progress
+        const existingProgress = getLessonProgress('vietnamese', 2);
+        
+        if (existingProgress && existingProgress.completedLetters) {
+            setCompletedLetters(new Set(existingProgress.completedLetters));
+            setLessonProgress(existingProgress.progress || 0);
+            
+            // Smart resume using new logic
+            const resumePosition = findResumePosition(existingProgress);
+            
+            if (resumePosition) {
+                setCurrentGroup(resumePosition.groupIndex);
+                setSelectedLetter(resumePosition.letter);
+                setResumeReason(resumePosition.reason);
+                setShowResumeMessage(true);
+                
+                // Hide message after 4 seconds
+                setTimeout(() => setShowResumeMessage(false), 4000);
+            }
+        }
+    }, []);
+
     useEffect(() => {
         if (letterVideos[selectedLetter]) {
             setIsPlaying(true);
@@ -105,11 +147,14 @@ export default function LessonDetailPage({ params }) {
             setIsPlaying(false);
             startAnimation();
         }
+        
+        // Mark letter as studied and update progress
+        markLetterAsStudied(selectedLetter);
     }, [selectedLetter]);
 
     useEffect(() => {
         speechSynthesis.onvoiceschanged = () => {
-            console.log("Loaded voices:", speechSynthesis.getVoices());
+            // Voices loaded
         };
     }, []);
 
@@ -158,20 +203,124 @@ export default function LessonDetailPage({ params }) {
     };
     const handleNavigateBack = () => {
         navigate("/curriculum");
-        console.log("Navigate back to curriculum");
+    };
+
+    // Helper function to find next unlearned letter with smart group progression
+    const findNextUnlearnedLetter = (completedSet) => {
+        for (let groupIndex = 0; groupIndex < letterGroups.length; groupIndex++) {
+            const group = letterGroups[groupIndex];
+            
+            // Check if current group has any unlearned letters
+            const unlearnedInGroup = group.letters.filter(letter => !completedSet.has(letter));
+            
+            if (unlearnedInGroup.length > 0) {
+                // Return first unlearned letter in this group
+                return { 
+                    letter: unlearnedInGroup[0], 
+                    groupIndex 
+                };
+            }
+        }
+        return null; // All letters completed
+    };
+
+    // Helper function to check if a group is completely learned
+    const isGroupCompleted = (groupIndex, completedSet) => {
+        const group = letterGroups[groupIndex];
+        return group.letters.every(letter => completedSet.has(letter));
+    };
+
+    // Helper function to find appropriate group/letter for resume
+    const findResumePosition = (existingProgress) => {
+        const completedSet = new Set(existingProgress.completedLetters || []);
+        
+        // If we have currentLetter and currentGroup saved, check if that group is still valid
+        if (existingProgress.currentLetter && existingProgress.currentGroup !== undefined) {
+            const savedGroup = existingProgress.currentGroup;
+            
+            // Check if the saved group is completed
+            if (isGroupCompleted(savedGroup, completedSet)) {
+                const nextUnlearned = findNextUnlearnedLetter(completedSet);
+                if (nextUnlearned) {
+                    return {
+                        letter: nextUnlearned.letter,
+                        groupIndex: nextUnlearned.groupIndex,
+                        reason: 'group_completed'
+                    };
+                }
+            } else {
+                // Group not completed, resume at saved position
+                return {
+                    letter: existingProgress.currentLetter,
+                    groupIndex: savedGroup,
+                    reason: 'resume_saved_position'
+                };
+            }
+        }
+        
+        // No saved position or invalid saved position, find next unlearned
+        const nextUnlearned = findNextUnlearnedLetter(completedSet);
+        if (nextUnlearned) {
+            return {
+                letter: nextUnlearned.letter,
+                groupIndex: nextUnlearned.groupIndex,
+                reason: 'next_unlearned'
+            };
+        }
+        
+        return null;
+    };
+
+    // Mark letter as studied and calculate progress
+    const markLetterAsStudied = (letter) => {
+        const newCompletedLetters = new Set([...completedLetters, letter]);
+        setCompletedLetters(newCompletedLetters);
+        
+        // Calculate total progress across all groups
+        const totalLetters = letterGroups.reduce((total, group) => total + group.letters.length, 0);
+        const newProgress = (newCompletedLetters.size / totalLetters) * 100;
+        setLessonProgress(newProgress);
+        
+        // Update progress in localStorage with detailed data
+        const timeSpentSeconds = Math.round((Date.now() - (sessionStorage.getItem('lessonStartTime') || Date.now())) / 1000);
+        const isLessonCompleted = newCompletedLetters.size === totalLetters;
+        
+        const progressData = {
+            completed: isLessonCompleted,
+            score: Math.round(newProgress),
+            timeSpent: timeSpentSeconds,
+            progress: newProgress,
+            completedLetters: Array.from(newCompletedLetters),
+            currentLetter: letter,
+            currentGroup: currentGroup,
+            lastStudiedAt: new Date().toISOString()
+        };
+        
+        updateLessonProgress('vietnamese', 2, progressData);
+        
+        // Check if lesson is complete (all letters studied)
+        if (newCompletedLetters.size === totalLetters) {
+            setTimeout(() => {
+                const timeSpentSeconds = Math.round((Date.now() - (sessionStorage.getItem('lessonStartTime') || Date.now())) / 1000);
+                completeLesson('vietnamese', 2, Math.round(newProgress), timeSpentSeconds);
+                setShowModal(true);
+            }, 1000);
+        }
     };
 
     const handlePrevGroup = () => {
         if (currentGroup > 0) {
-            setCurrentGroup(currentGroup - 1);
-            setSelectedLetter(letterGroups[currentGroup - 1].letters[0]);
+            const newGroup = currentGroup - 1;
+            setCurrentGroup(newGroup);
+            setSelectedLetter(letterGroups[newGroup].letters[0]);
         }
     };
 
     const handleNextGroup = () => {
         if (currentGroup < letterGroups.length - 1) {
-            setCurrentGroup(currentGroup + 1);
-            setSelectedLetter(letterGroups[currentGroup + 1].letters[0]);
+            const newGroup = currentGroup + 1;
+            setCurrentGroup(newGroup);
+            setSelectedLetter(letterGroups[newGroup].letters[0]);
         }
     };
 
@@ -188,7 +337,25 @@ export default function LessonDetailPage({ params }) {
                             <ArrowLeft className="w-6 h-6" />
                             <span className="font-semibold">Quay lại</span>
                         </button>
-                        <h1 className="text-2xl font-bold text-gray-800">Chi tiết bài học</h1>
+                        <div className="text-center">
+                            <h1 className="text-2xl font-bold text-gray-800">Bài học Tiếng Việt 2</h1>
+                            <div className="mt-2 flex items-center gap-4">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-32 bg-gray-200 rounded-full h-2">
+                                        <div
+                                            className="bg-gradient-to-r from-blue-400 to-green-500 h-2 rounded-full transition-all duration-500"
+                                            style={{ width: `${lessonProgress}%` }}
+                                        ></div>
+                                    </div>
+                                    <span className="text-sm font-semibold text-green-600">
+                                        {lessonProgress.toFixed(1)}%
+                                    </span>
+                                </div>
+                                <span className="text-sm text-gray-600">
+                                    {completedLetters.size}/{letterGroups.reduce((total, group) => total + group.letters.length, 0)} chữ cái
+                                </span>
+                            </div>
+                        </div>
                         <div className="w-20"></div>
                     </div>
                 </div>
@@ -196,6 +363,36 @@ export default function LessonDetailPage({ params }) {
 
             {/* Main Content */}
             <main className="max-w-7xl mx-auto px-4 py-8">
+                {/* Resume Message */}
+                {showResumeMessage && (
+                    <div className="mb-6 p-4 bg-blue-100 border-l-4 border-blue-500 rounded-r-lg animate-pulse">
+                        <div className="flex items-center">
+                            <div className="text-2xl mr-3">
+                                {resumeReason === 'group_completed' ? '🎉' : '🎯'}
+                            </div>
+                            <div>
+                                <h4 className="font-bold text-blue-800">
+                                    {resumeReason === 'group_completed' 
+                                        ? 'Tuyệt vời! Bạn đã hoàn thành nhóm trước!' 
+                                        : 'Chào mừng bạn quay lại!'
+                                    }
+                                </h4>
+                                <p className="text-blue-600">
+                                    {resumeReason === 'group_completed' 
+                                        ? `Chuyển sang ${letterGroups[currentGroup]?.name} - Tiếp tục với chữ ${selectedLetter}`
+                                        : resumeReason === 'resume_saved_position'
+                                            ? `Quay lại vị trí cuối: chữ ${selectedLetter} trong ${letterGroups[currentGroup]?.name}`
+                                            : `Tiếp tục từ chữ ${selectedLetter} trong ${letterGroups[currentGroup]?.name}`
+                                    }
+                                </p>
+                                <p className="text-blue-500 text-sm mt-1">
+                                    Đã học: {completedLetters.size} chữ cái ({lessonProgress.toFixed(1)}%)
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 <div className="grid lg:grid-cols-12 gap-8" style={{ height: 'calc(100vh - 200px)' }}>
                     {/* Left - Alphabet Grid */}
                     <div className="lg:col-span-3 bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl border-2 border-white/50 p-6">
@@ -230,28 +427,42 @@ export default function LessonDetailPage({ params }) {
                         
                         {/* Alphabet Grid - Vertical Column */}
                         <div className="flex flex-col gap-6 overflow-y-auto items-center justify-center" style={{ height: 'calc(100% - 120px)' }}>
-                            {letterGroups[currentGroup].letters.map((letter) => (
-                                <button
-                                    key={letter}
-                                    onClick={() => handleLetterSelect(letter)}
-                                    className={`rounded-3xl font-bold text-7xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center justify-center ${
-                                        selectedLetter === letter
-                                            ? "bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-2xl scale-105"
-                                            : "bg-gradient-to-br from-yellow-200 to-orange-200 text-gray-700 hover:from-yellow-300 hover:to-orange-300"
-                                    }`}
-                                    style={{
-                                        height: '180px',     // Tăng chiều cao cho mỗi button
-                                        width: '90%',       // Chiều rộng đầy đủ
-                                        boxShadow: selectedLetter === letter 
-                                            ? '0 10px 25px -5px rgba(59, 130, 246, 0.5)' 
-                                            : '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                                    }}
-                                >
-                                    <span className="transform hover:scale-110 transition-transform duration-300">
-                                        {letter}
-                                    </span>
-                                </button>
-                            ))}
+                            {letterGroups[currentGroup].letters.map((letter) => {
+                                const isCompleted = completedLetters.has(letter);
+                                const isSelected = selectedLetter === letter;
+                                
+                                return (
+                                    <button
+                                        key={letter}
+                                        onClick={() => handleLetterSelect(letter)}
+                                        className={`rounded-3xl font-bold text-7xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center justify-center relative ${
+                                            isSelected
+                                                ? "bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-2xl scale-105"
+                                                : isCompleted
+                                                    ? "bg-gradient-to-br from-green-400 to-emerald-500 text-white"
+                                                    : "bg-gradient-to-br from-yellow-200 to-orange-200 text-gray-700 hover:from-yellow-300 hover:to-orange-300"
+                                        }`}
+                                        style={{
+                                            height: '180px',
+                                            width: '90%',
+                                            boxShadow: isSelected
+                                                ? '0 10px 25px -5px rgba(59, 130, 246, 0.5)'
+                                                : isCompleted
+                                                    ? '0 10px 25px -5px rgba(34, 197, 94, 0.4)'
+                                                    : '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                                        }}
+                                    >
+                                        <span className="transform hover:scale-110 transition-transform duration-300">
+                                            {letter}
+                                        </span>
+                                        {isCompleted && !isSelected && (
+                                            <div className="absolute top-2 right-2 w-6 h-6 bg-white rounded-full flex items-center justify-center">
+                                                <span className="text-green-500 text-sm font-bold">✓</span>
+                                            </div>
+                                        )}
+                                    </button>
+                                );
+                            })}
                         </div>
 
                         {/* Progress indicator */}
@@ -278,6 +489,23 @@ export default function LessonDetailPage({ params }) {
                         <div className="flex items-center justify-between mb-6">
                             <h2 className="text-3xl font-bold text-gray-800">Học Viết chữ</h2>
                             <div className="flex gap-3">
+                                {/* Quick Jump to Next Unlearned */}
+                                {(() => {
+                                    const nextUnlearned = findNextUnlearnedLetter(completedLetters);
+                                    return nextUnlearned && nextUnlearned.letter !== selectedLetter ? (
+                                        <button
+                                            onClick={() => {
+                                                setCurrentGroup(nextUnlearned.groupIndex);
+                                                setSelectedLetter(nextUnlearned.letter);
+                                            }}
+                                            className="px-3 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg shadow-lg text-sm font-semibold transition-all"
+                                            title={`Nhảy đến chữ ${nextUnlearned.letter} chưa học`}
+                                        >
+                                            → {nextUnlearned.letter}
+                                        </button>
+                                    ) : null;
+                                })()}
+                                
                                 <button
                                     onClick={playSound}
                                     className="p-4 bg-green-500 hover:bg-green-600 text-white rounded-full shadow-lg transform hover:scale-105 transition-all"
@@ -295,6 +523,7 @@ export default function LessonDetailPage({ params }) {
                                         <Play className="w-6 h-6" />
                                     </button>
                                 )}
+
                             </div>
                         </div>
 
@@ -417,15 +646,40 @@ export default function LessonDetailPage({ params }) {
 
                         {/* Info Section */}
                         <div className="mt-6 p-6 bg-gradient-to-r from-purple-100 to-pink-100 rounded-2xl">
-                            <h3 className="font-bold text-2xl text-purple-800 mb-3">Chữ cái: {selectedLetter}</h3>
-                            <p className="text-purple-600 text-lg">
+                            <div className="flex items-center justify-between mb-3">
+                                <h3 className="font-bold text-2xl text-purple-800">Chữ cái: {selectedLetter}</h3>
+                                {completedLetters.has(selectedLetter) && (
+                                    <div className="flex items-center gap-2 bg-green-500 text-white px-3 py-1 rounded-full">
+                                        <span className="text-sm font-semibold">✓ Đã học</span>
+                                    </div>
+                                )}
+                            </div>
+                            <p className="text-purple-600 text-lg mb-3">
                                 {selectedLetter === "A"
                                     ? "Hãy xem video để học cách viết chữ A!"
-                                    : `Hãy quan sát cách đọc chữ ${selectedLetter} và thực hành theo!`}
+                                    : `Hãy quan sát cách viết chữ ${selectedLetter} và thực hành theo!`}
                             </p>
+                            <div className="flex items-center gap-4 text-sm">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-3 h-3 bg-green-400 rounded-full"></div>
+                                    <span className="text-gray-600">Đã học: {completedLetters.size} chữ</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
+                                    <span className="text-gray-600">
+                                        Còn lại: {letterGroups.reduce((total, group) => total + group.letters.length, 0) - completedLetters.size} chữ
+                                    </span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
+                {showModal && (
+                    <LessonCompleteModal
+                        onClose={() => setShowModal(false)}
+                        onContinuePath={`/curriculum`}
+                    />
+                )}
             </main>
         </div>
     );

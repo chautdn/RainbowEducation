@@ -13,6 +13,13 @@ router.post('/resend-verification', authController.resendEmailVerification);
 router.post('/forgot-password', authController.forgotPassword);
 router.patch('/reset-password/:token', authController.resetPassword);
 
+// Payment and lesson access routes (protected)
+router.get('/lessons', authController.protect, userController.getUserLessons);
+router.get('/lessons/:lessonType/:lessonId/access', authController.protect, userController.checkLessonAccess);
+router.post('/purchase/lesson', authController.protect, userController.purchaseLesson);
+router.post('/purchase/subscription', authController.protect, userController.purchaseSubscription);
+router.get('/profile', authController.protect, userController.getUserProfile);
+
 router
   .route('/')
   .get(userController.getAllUsers)

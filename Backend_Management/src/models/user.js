@@ -32,6 +32,46 @@ const UserSchema = new Schema(
     resetPasswordExpiresAt: Date,
     verificationToken: String,
     verificationTokenExpiresAt: Date,
+    
+    // Payment and subscription fields
+    subscription: {
+      type: {
+        type: String,
+        enum: ['free', 'basic', 'premium'],
+        default: 'free'
+      },
+      startDate: Date,
+      endDate: Date,
+      isActive: {
+        type: Boolean,
+        default: false
+      }
+    },
+    
+    // Lessons access tracking
+    accessibleLessons: [{
+      lessonType: {
+        type: String,
+        enum: ['vietnamese', 'math', 'animal'],
+        required: true
+      },
+      lessonId: {
+        type: String,
+        required: true
+      },
+      isPaid: {
+        type: Boolean,
+        default: false
+      },
+      paymentDate: Date,
+      expiresAt: Date
+    }],
+    
+    // Free trial lessons (everyone gets these)
+    freeTrialUsed: {
+      type: Boolean,
+      default: false
+    }
   },
   { timestamps: true },
   { versionKey: false }
@@ -49,6 +89,63 @@ UserSchema.methods.correctPassword = async function (
   userPassword
 ) {
   return await bcrypt.compare(candidatePassword, userPassword);
+};
+
+// Method to check if user has access to a lesson
+UserSchema.methods.hasAccessToLesson = function(lessonType, lessonId) {
+  // Free lessons that everyone can access
+  const freeLessons = {
+    'vietnamese': ['1', '2'], // Vietnamese lessons 1,2 are free
+    'math': ['4', '5'], // Math lessons 4,5 are free  
+    'animal': [] // No free animal lessons - only lesson 1 requires payment
+  };
+  
+  // Check if lesson is free
+  if (freeLessons[lessonType] && freeLessons[lessonType].includes(lessonId)) {
+    return true;
+  }
+  
+  // Check if user has premium subscription
+  if (this.subscription.type === 'premium' && this.subscription.isActive && 
+      this.subscription.endDate > new Date()) {
+    return true;
+  }
+  
+  // Check if user has paid for specific lesson
+  const lessonAccess = this.accessibleLessons.find(
+    lesson => lesson.lessonType === lessonType && 
+              lesson.lessonId === lessonId && 
+              lesson.isPaid &&
+              (!lesson.expiresAt || lesson.expiresAt > new Date())
+  );
+  
+  return !!lessonAccess;
+};
+
+// Method to grant access to a lesson
+UserSchema.methods.grantLessonAccess = function(lessonType, lessonId, duration = null) {
+  const existingAccess = this.accessibleLessons.find(
+    lesson => lesson.lessonType === lessonType && lesson.lessonId === lessonId
+  );
+  
+  if (existingAccess) {
+    existingAccess.isPaid = true;
+    existingAccess.paymentDate = new Date();
+    if (duration) {
+      existingAccess.expiresAt = new Date(Date.now() + duration);
+    }
+  } else {
+    const newAccess = {
+      lessonType,
+      lessonId,
+      isPaid: true,
+      paymentDate: new Date()
+    };
+    if (duration) {
+      newAccess.expiresAt = new Date(Date.now() + duration);
+    }
+    this.accessibleLessons.push(newAccess);
+  }
 };
 
 // Index hóa email để tìm kiếm nhanh hơn
