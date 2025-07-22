@@ -1,5 +1,7 @@
+import { useEffect } from "react";
 import { Route, Routes } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
+import { useAuthStore } from "./store/authStore";
 import AuthLayout from "./layouts/AuthLayout";
 import MainLayout from "./layouts/MainLayout";
 
@@ -27,7 +29,30 @@ import NumberReadingLessonPage from "./pages/lesson-detail/numbers/Lesson2";
 import AnimalLessonPage from "./pages/lesson-detail/animal/lesson1";
 import LessonAccessDemo from "./components/sharedComponents/LessonAccessDemo";
 
+// Import Payment Components
+import PaymentSuccess from "./components/payment/PaymentSuccess";
+import PaymentCancel from "./components/payment/PaymentCancel";
+
 function App() {
+  const { checkAuth, isCheckingAuth } = useAuthStore();
+
+  // Check authentication when app loads
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
+  // Show loading screen while checking authentication
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-white mx-auto mb-4"></div>
+          <p className="text-white text-lg font-semibold">Đang tải...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       <Routes>
@@ -76,7 +101,7 @@ function App() {
             element={<Lesson2 />}
           />
 
-          {/* Math Lessons - NEW ROUTES */}
+          {/* Math Lessons */}
           <Route
             path="/lesson-detail/math/lesson4"
             element={<NumberLessonPage />}
@@ -86,7 +111,7 @@ function App() {
             element={<NumberReadingLessonPage />}
           />
 
-          {/* Legacy number routes - keep for backward compatibility */}
+          {/* Legacy number routes */}
           <Route
             path="/lesson-detail/numbers/lesson4"
             element={<NumberLessonPage />}
@@ -101,11 +126,25 @@ function App() {
             path="/lesson-detail/animal/lesson1"
             element={<AnimalLessonPage />}
           />
+          <Route
+            path="/lesson-detail/animal/lesson3"
+            element={<AnimalLessonPage />}
+          />
 
           {/* Payment Demo */}
           <Route
             path="/payment-demo"
             element={<LessonAccessDemo />}
+          />
+
+          {/* Payment Result Pages */}
+          <Route
+            path="/payment/success"
+            element={<PaymentSuccess />}
+          />
+          <Route
+            path="/payment/cancel"
+            element={<PaymentCancel />}
           />
         </Route>
 

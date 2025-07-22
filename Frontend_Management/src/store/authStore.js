@@ -3,13 +3,53 @@ import axiosInstance from "../components/utils/AxiosInstance";
 import useErrorStore from './errorStore';
 const API_URL = "/user";
 
-export const useAuthStore = create((set) => ({
+export const useAuthStore = create((set, get) => ({
   user: null,
   isAuthenticated: false,
   error: null,
   isLoading: false,
   isCheckingAuth: true,
   message: null,
+
+  // Add checkAuth function to verify stored token
+  checkAuth: async () => {
+    set({ isCheckingAuth: true });
+    try {
+      const token = localStorage.getItem("token");
+      
+      if (!token) {
+        set({ isCheckingAuth: false, isAuthenticated: false, user: null });
+        return;
+      }
+
+      // Verify token with backend
+      const response = await axiosInstance.get(`${API_URL}/profile`);
+      
+      if (response.data?.status === 'success' && response.data?.data?.user) {
+        set({
+          isAuthenticated: true,
+          user: response.data.data.user,
+          isCheckingAuth: false,
+          error: null
+        });
+        console.log("Auth restored from token:", response.data.data.user);
+      } else {
+        // Invalid token, clear it
+        localStorage.removeItem("token");
+        set({ isCheckingAuth: false, isAuthenticated: false, user: null });
+      }
+    } catch (error) {
+      console.error("Token verification failed:", error);
+      // Token is invalid, clear it
+      localStorage.removeItem("token");
+      set({ 
+        isCheckingAuth: false, 
+        isAuthenticated: false, 
+        user: null,
+        error: null // Don't show error for failed token verification
+      });
+    }
+  },
 
   signup: async (name, email, password) => {
     set({ isLoading: true, error: null });
@@ -43,8 +83,18 @@ export const useAuthStore = create((set) => ({
         email,
         otp,
       });
+      
+      // After email verification, also get user data and token
+      const user = response.data?.data?.user || null;
+      const token = response.data?.jwt || response.data?.data?.token || response.data?.token || null;
+      
+      if (token) {
+        localStorage.setItem("token", token);
+      }
+      
       set({
         isAuthenticated: true,
+        user: user,
         isLoading: false,
         message: "Email verified successfully",
       });
@@ -98,11 +148,13 @@ export const useAuthStore = create((set) => ({
           isAuthenticated: true,
           user,
           isLoading: false,
+          error: null
         });
   
         // Store token in localStorage after successful login
         localStorage.setItem("token", token);
         console.log("Login successful, token saved:", token);
+        console.log("User logged in:", user);
       } else {
         set({ 
           isLoading: false,
@@ -156,7 +208,11 @@ export const useAuthStore = create((set) => ({
     set({ isLoading: true, error: null });
     try {
       await axiosInstance.post(`${API_URL}/logout`);
-      // Clear token from localStorage
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Continue with logout even if server request fails
+    } finally {
+      // Always clear local state and token
       localStorage.removeItem("token");
       set({
         user: null,
@@ -164,12 +220,6 @@ export const useAuthStore = create((set) => ({
         error: null,
         isLoading: false,
       });
-    } catch (error) {
-      set({
-        error: error.response?.data?.message || "Error logging out",
-        isLoading: false,
-      });
-      throw error;
     }
   },
 

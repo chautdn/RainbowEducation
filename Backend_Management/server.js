@@ -5,9 +5,22 @@ const connectDB = require("./src/database_config/mongo_config");
 const UserRouter = require("./src/routes/userRoute");
 const courseRoutes = require("./src/routes/courseRoutes");
 const handleError = require("./src/utils/errorHandler");
+const coursePaymentRoutes = require("./src/routes/coursePayment");
 require("dotenv").config({ path: "./config.env" });
 
 const app = express(); //Create server
+
+const session = require('express-session');
+
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'your-secret-key',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { 
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
+}));
 
 app.use(express.json());
 
@@ -34,6 +47,11 @@ app.use((req, res, next) => {
 //Middleware Routing
 app.use("/user", UserRouter);
 app.use("/course", courseRoutes);
+// Add body parser for webhook
+app.use("/api/payment/webhook/payos", express.raw({ type: "application/json" }));
+
+// Payment routes
+app.use("/api/payment", coursePaymentRoutes);
 ////Error Handler Middleware
 app.use(handleError);
 

@@ -47,6 +47,20 @@ const UserSchema = new Schema(
         default: false
       }
     },
+    purchasedCourses: [{
+  courseId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Course'
+  },
+  purchasedAt: {
+    type: Date,
+    default: Date.now
+  },
+  amount: Number,
+  orderCode: String
+}],
+
+    
     
     // Lessons access tracking
     accessibleLessons: [{

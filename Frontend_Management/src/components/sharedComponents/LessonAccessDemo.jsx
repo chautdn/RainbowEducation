@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { PaymentService } from '../../services/paymentService';
-import PaymentModal from './PaymentModal';
 import { toast } from 'react-toastify';
 import { Lock, Crown, Check } from 'lucide-react';
 
 const LessonAccessDemo = () => {
   const [userLessons, setUserLessons] = useState([]);
   const [selectedLesson, setSelectedLesson] = useState(null);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -23,11 +21,6 @@ const LessonAccessDemo = () => {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handlePurchase = (lesson) => {
-    setSelectedLesson(lesson);
-    setShowPaymentModal(true);
   };
 
   const handlePaymentSuccess = () => {
@@ -124,15 +117,7 @@ const LessonAccessDemo = () => {
         ))}
       </div>
 
-      {/* Payment Modal */}
-      {selectedLesson && (
-        <PaymentModal
-          isOpen={showPaymentModal}
-          onClose={() => setShowPaymentModal(false)}
-          lesson={selectedLesson}
-          onPaymentSuccess={handlePaymentSuccess}
-        />
-      )}
+      
 
       {/* Demo Instructions */}
       <div className="mt-12 bg-gray-50 rounded-xl p-6">

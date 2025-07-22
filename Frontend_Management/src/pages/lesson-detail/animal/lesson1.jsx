@@ -6,6 +6,7 @@ import PaymentModal from "../../../components/sharedComponents/PaymentModal"
 import { toast } from "react-toastify"
 import { useAuthStore } from "../../../store/authStore"
 import { useLearningProgress } from "../../../hooks/useLearningProgress"
+
 const animals = [
     {
         id: 1,
@@ -96,6 +97,7 @@ export default function LessonDetailPage() {
     const [hasAccess, setHasAccess] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
     const [showPaymentModal, setShowPaymentModal] = useState(false)
+    const [accessCheckError, setAccessCheckError] = useState(null)
     const { user, isAuthenticated } = useAuthStore()
     const { completeLesson, getLessonProgress } = useLearningProgress()
     const [lessonStartTime] = useState(Date.now())
@@ -107,18 +109,92 @@ export default function LessonDetailPage() {
         price: PaymentService.getLessonPrice('animal', '1')
     }
 
-    // Track lesson completion
-    const checkLessonCompletion = () => {
-        const timeSpent = Math.round((Date.now() - lessonStartTime) / 1000)
-        const score = Math.round((currentIndex + 1) / animals.length * 100)
+    // Check lesson access with better error handling
+    useEffect(() => {
+        const checkAccess = async () => {
+            console.log('=== ANIMAL LESSON ACCESS CHECK ===')
+            console.log('1. User authenticated:', isAuthenticated)
+            console.log('2. User object:', user)
+            console.log('3. Lesson info:', lessonInfo)
+            
+            if (!isAuthenticated) {
+                console.log('4. User not authenticated - redirecting to payment screen')
+                setHasAccess(false)
+                setIsLoading(false)
+                return
+            }
+            
+            try {
+                console.log('5. Calling PaymentService.checkLessonAccess...')
+                const accessData = await PaymentService.checkLessonAccess(lessonInfo.type, lessonInfo.id)
+                console.log('6. Access data received:', accessData)
+                
+                // Check if user has access
+                const userHasAccess = accessData.hasAccess === true || accessData.isFree === true
+                setHasAccess(userHasAccess)
+                
+                if (!userHasAccess) {
+                    console.log('7. User does not have access to this lesson')
+                    // Also verify with user courses as backup
+                    try {
+                        console.log('8. Getting user courses for verification...')
+                        const coursesResponse = await PaymentService.getUserLessons()
+                        console.log('9. User courses response:', coursesResponse)
+                        
+                        const animalLesson = coursesResponse.lessons?.find(lesson => 
+                            lesson.type === 'animal' && lesson.id === '1'
+                        )
+                        console.log('10. Animal lesson found in courses:', animalLesson)
+                        
+                        // Double-check access with course data
+                        if (animalLesson && (animalLesson.hasAccess || animalLesson.isFree)) {
+                            console.log('11. Access granted via course data')
+                            setHasAccess(true)
+                        }
+                    } catch (coursesError) {
+                        console.error('Error getting user courses:', coursesError)
+                    }
+                }
+                
+            } catch (error) {
+                console.error('Error checking access:', error)
+                setAccessCheckError(error.message)
+                setHasAccess(false)
+                // Don't show toast here, let the UI handle it
+            } finally {
+                setIsLoading(false)
+            }
+        }
         
-        if (currentIndex === animals.length - 1) {
-            // Completed all animals
-            completeLesson('animal', '1', score, timeSpent)
-            toast.success('🎉 Chúc mừng! Bạn đã hoàn thành bài học về động vật!')
+        checkAccess()
+    }, [isAuthenticated, user])
+
+    // Handle successful payment
+    const handlePaymentSuccess = async () => {
+        console.log('Payment successful, re-checking access...')
+        setHasAccess(true)
+        toast.success('Thanh toán thành công! Bạn đã có quyền truy cập vào bài học này!')
+        
+        // Optionally refresh access status
+        try {
+            const accessData = await PaymentService.checkLessonAccess(lessonInfo.type, lessonInfo.id)
+            setHasAccess(accessData.hasAccess || accessData.isFree)
+        } catch (error) {
+            console.error('Error refreshing access:', error)
         }
     }
-    // Hàm dừng âm thanh
+
+    // Handle purchase click
+    const handlePurchaseClick = () => {
+        if (!isAuthenticated) {
+            toast.error('Vui lòng đăng nhập để mua bài học')
+            navigate('/login')
+            return
+        }
+        setShowPaymentModal(true)
+    }
+
+    // Sound and navigation functions
     const stopSound = () => {
         if (audioRef.current) {
             audioRef.current.pause()
@@ -127,38 +203,33 @@ export default function LessonDetailPage() {
     }
 
     const nextCard = () => {
-        stopSound() // Dừng âm thanh trước khi chuyển
+        stopSound()
         const nextIndex = currentIndex < animals.length - 1 ? currentIndex + 1 : 0
         setCurrentIndex(nextIndex)
         
-        // Check completion when reaching the last animal
         if (nextIndex === animals.length - 1) {
-            setTimeout(checkLessonCompletion, 2000) // Delay to let user see the last animal
+            setTimeout(checkLessonCompletion, 2000)
         }
     }
 
     const prevCard = () => {
-        stopSound() // Dừng âm thanh trước khi chuyển
+        stopSound()
         setCurrentIndex(currentIndex > 0 ? currentIndex - 1 : animals.length - 1)
     }
 
     const playSound = (sound, soundUrl) => {
-        // Dừng âm thanh hiện tại nếu đang phát
         stopSound()
 
-        // Nếu có URL âm thanh, phát âm thanh từ URL
         if (soundUrl) {
             audioRef.current.src = soundUrl
             audioRef.current.play().catch(error => {
                 console.error("Error playing audio:", error)
-                // Fallback to text-to-speech if audio fails
                 const utterance = new SpeechSynthesisUtterance(sound)
                 utterance.rate = 0.8
                 utterance.pitch = 1.2
                 speechSynthesis.speak(utterance)
             })
         } else {
-            // Fallback to text-to-speech if no audio URL
             const utterance = new SpeechSynthesisUtterance(sound)
             utterance.rate = 0.8
             utterance.pitch = 1.2
@@ -166,38 +237,28 @@ export default function LessonDetailPage() {
         }
     }
 
-    // Check lesson access on component mount
-    useEffect(() => {
-        const checkAccess = async () => {
-            if (!isAuthenticated) {
-                setIsLoading(false)
-                return
-            }
-            
-            try {
-                const accessData = await PaymentService.checkLessonAccess(lessonInfo.type, lessonInfo.id)
-                setHasAccess(accessData.hasAccess)
-            } catch (error) {
-                console.error('Error checking access:', error)
-                toast.error('Không thể kiểm tra quyền truy cập bài học')
-            } finally {
-                setIsLoading(false)
-            }
-        }
+    const checkLessonCompletion = () => {
+        const timeSpent = Math.round((Date.now() - lessonStartTime) / 1000)
+        const score = Math.round((currentIndex + 1) / animals.length * 100)
         
-        checkAccess()
-    }, [isAuthenticated])
+        if (currentIndex === animals.length - 1) {
+            completeLesson('animal', '1', score, timeSpent)
+            toast.success('🎉 Chúc mừng! Bạn đã hoàn thành bài học về động vật!')
+        }
+    }
 
-    // Cleanup khi component unmount và track progress
+    const handleNavigateBack = () => {
+        navigate("/curriculum")
+    }
+
+    // Cleanup
     useEffect(() => {
         return () => {
             stopSound()
-            // Save progress when leaving the lesson
             const timeSpent = Math.round((Date.now() - lessonStartTime) / 1000)
             const progressPercent = Math.round(((currentIndex + 1) / animals.length) * 100)
             
-            // Save partial progress even if not completed
-            if (timeSpent > 10) { // Only save if spent more than 10 seconds
+            if (timeSpent > 10) {
                 sessionStorage.setItem('animalLessonProgress', JSON.stringify({
                     currentIndex,
                     timeSpent,
@@ -207,22 +268,6 @@ export default function LessonDetailPage() {
             }
         }
     }, [currentIndex, lessonStartTime])
-    const handleNavigateBack = () => {
-        navigate("/curriculum")
-    }
-
-    const handlePaymentSuccess = () => {
-        setHasAccess(true)
-        toast.success('Bạn đã có quyền truy cập vào bài học này!')
-    }
-
-    const handlePurchaseClick = () => {
-        if (!isAuthenticated) {
-            //toast.error('Vui lòng đăng nhập để mua bài học')
-            return
-        }
-        setShowPaymentModal(true)
-    }
 
     // Loading state
     if (isLoading) {
@@ -236,8 +281,8 @@ export default function LessonDetailPage() {
         )
     }
 
-    // Access denied state
-    if (!isAuthenticated && !hasAccess) {
+    // Payment required screen
+    if (!hasAccess) {
         return (
             <div className="h-screen bg-gradient-to-br from-sky-100 via-purple-50 to-pink-100">
                 <button
@@ -251,50 +296,43 @@ export default function LessonDetailPage() {
 
                 <div className="max-w-4xl mx-auto px-4 py-8 flex items-center justify-center min-h-screen">
                     <div className="bg-white rounded-3xl shadow-2xl p-8 text-center max-w-md w-full">
-                        <div className="mb-6">
-                            <Lock className="mx-auto text-purple-600 mb-4" size={64} />
-                            <h2 className="text-2xl font-bold text-gray-800 mb-2">Bài học cần thanh toán</h2>
-                            <p className="text-gray-600 mb-4">
-                                Để truy cập vào bài học `{lessonInfo.title}``, bạn cần thanh toán phí học tập.
-                            </p>
-                        </div>
-
-                        <div className="bg-purple-50 rounded-2xl p-4 mb-6">
-                            <h3 className="font-semibold text-purple-800 mb-2">{lessonInfo.title}</h3>
-                            <div className="text-3xl font-bold text-purple-600 mb-2">
-                                {PaymentService.formatPrice(lessonInfo.price)}
+                        
+                        {/* Error message if access check failed */}
+                        {accessCheckError && (
+                            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                                <h4 className="font-bold text-red-800 mb-2">⚠️ Lỗi kiểm tra quyền truy cập</h4>
+                                <p className="text-red-600 text-sm">{accessCheckError}</p>
                             </div>
-                            <div className="text-sm text-purple-600">
-                                ✅ Truy cập không giới hạn trong 30 ngày<br/>
-                                ✅ 10 loại động vật với âm thanh thật<br/>
-                                ✅ Học liệu chất lượng cao
-                            </div>
-                        </div>
+                        )}
 
-                        <button
-                            onClick={handlePurchaseClick}
-                            className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 px-6 rounded-xl hover:from-purple-700 hover:to-blue-700 transition-colors font-semibold"
-                        >
-                            Mua bài học ngay
-                        </button>
+
+                        {/* Debug override button - only in development */}
+                        {process.env.NODE_ENV === 'development' && (
+                            <button
+                                onClick={() => {
+                                    setHasAccess(true)
+                                }}
+                                className="w-full mt-2 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg text-sm"
+                            >
+                                Truy cập bài học
+                            </button>
+                        )}
                     </div>
                 </div>
 
-                <PaymentModal
-                    isOpen={showPaymentModal}
-                    onClose={() => setShowPaymentModal(false)}
-                    lesson={lessonInfo}
-                    onPaymentSuccess={handlePaymentSuccess}
-                />
+                {isAuthenticated && (
+                    <PaymentModal
+                        isOpen={showPaymentModal}
+                        onClose={() => setShowPaymentModal(false)}
+                        lesson={lessonInfo}
+                        onPaymentSuccess={handlePaymentSuccess}
+                    />
+                )}
             </div>
         )
     }
 
-    // Not authenticated state
-    // if (!isAuthenticated) {
-    //     toast.error('Vui lòng đăng nhập để mua bài học')
-    //     return
-    // }
+    // Lesson content - only shown if user has access
     return (
         <div className="h-screen overflow-y-auto bg-gradient-to-br from-sky-100 via-purple-50 to-pink-100">
             <button
@@ -312,6 +350,9 @@ export default function LessonDetailPage() {
                     <h1 className="text-4xl md:text-6xl font-bold text-purple-800 mb-4 font-comic">
                         🐾 Những Con Vật Quen Thuộc Quanh Ta 🐾
                     </h1>
+                    <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4 inline-block">
+                        ✅ Bạn đã có quyền truy cập vào bài học này!
+                    </div>
                 </div>
 
                 {/* Progress Bar */}
@@ -353,7 +394,7 @@ export default function LessonDetailPage() {
                     </button>
                 </div>
 
-                {/* Single Animal Card Display */}
+                {/* Animal Card Display */}
                 <div className="flex justify-center mb-8">
                     <div
                         className={`w-96 h-[500px] md:w-[500px] md:h-[600px] ${animals[currentIndex].color} rounded-3xl shadow-2xl transform transition-all duration-500 hover:scale-105`}
@@ -413,7 +454,7 @@ export default function LessonDetailPage() {
                     <div className="grid md:grid-cols-2 gap-6">
                         <div className="bg-yellow-100 rounded-2xl p-4">
                             <p className="text-gray-700 text-lg">
-                                <span className="font-bold text-yellow-600">Bé có biết không?</span> Chó có thể nghe được những âm thanh mà tai người không thể!
+                                <span className="font-bold text-yellow-600">Bé có biết không?</span> Chó có thể nghe được những âm thanh mà tai người không thể!
                             </p>
                         </div>
                         <div className="bg-pink-100 rounded-2xl p-4">
@@ -437,13 +478,6 @@ export default function LessonDetailPage() {
           display: none;
         }
       `}</style>
-
-            <PaymentModal
-                isOpen={showPaymentModal}
-                onClose={() => setShowPaymentModal(false)}
-                lesson={lessonInfo}
-                onPaymentSuccess={handlePaymentSuccess}
-            />
         </div>
     )
 }
