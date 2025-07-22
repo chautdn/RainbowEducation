@@ -5,6 +5,7 @@ import CustomNavbar from "../../components/navbar/CustomNavbar";
 import FallingNumbers from "../../components/sharedComponents/FallingNumbers";
 import FallingShapes from "../../components/shapes/FallingShapes";
 import ShapesAnimation from "../../components/sharedComponents/ShapesAnimation";
+import BodyIcon from "../../components/lesson/BodyIcon";
 
 const GameLessons = () => {
   const [isCompact, setIsCompact] = useState(false);
@@ -65,13 +66,13 @@ const GameLessons = () => {
               <div className="text-center mb-12">
                 <div className="bg-gradient-to-r from-white/80 to-yellow-100/80 backdrop-blur-sm rounded-3xl shadow-2xl border-2 border-white/50 p-8 inline-block">
                   <h2 className="text-5xl font-bold text-purple-700 drop-shadow-lg animate-pulse mb-4">
-                    🎮 Game Zone 🎮
+                    🎮 Khu Vực Trò Chơi 🎮
                   </h2>
                   <h3 className="text-3xl font-bold text-orange-600 drop-shadow-md">
-                    Select Your Learning Adventure! 📚
+                    Chọn Cuộc Phiêu Lưu Học Tập Của Bạn! 📚
                   </h3>
                   <p className="text-lg text-purple-600 mt-4 font-semibold">
-                    Choose a lesson and start your fun learning journey!
+                    Hãy chọn một bài học và bắt đầu hành trình học tập vui nhộn!
                   </p>
                 </div>
               </div>
@@ -99,11 +100,15 @@ const GameLessons = () => {
                       {/* Game Image */}
                       <div className="relative z-20 mb-4 flex-shrink-0">
                         <div className="overflow-hidden rounded-xl border-2 border-white/70 shadow-lg">
-                          <img 
-                            src={game.imgUrl} 
-                            alt={`${game.title} preview`}
-                            className="w-full h-32 object-cover transition-transform duration-300 group-hover:scale-110"
-                          />
+                          {game.gameLessonId === 8 ? (
+                            <BodyIcon className="w-full h-32 transition-transform duration-300 group-hover:scale-110" />
+                          ) : (
+                            <img 
+                              src={game.imgUrl} 
+                              alt={`${game.title} preview`}
+                              className="w-full h-32 object-cover transition-transform duration-300 group-hover:scale-110"
+                            />
+                          )}
                         </div>
                       </div>
                       

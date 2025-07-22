@@ -118,7 +118,7 @@ const CustomNavbar = ({ isCompact }) => {
             </span>
           </div>
         )}
-        <button
+        {/* <button
           className={`flex items-center justify-center shadow-xl transition-all duration-500 font-bold hover:scale-110 border-3 border-white/70 ${
             isCompact
               ? "w-40 h-12 bg-gradient-to-r from-lime-300 to-green-400 text-green-800 text-base px-0 py-0"
@@ -135,8 +135,8 @@ const CustomNavbar = ({ isCompact }) => {
                 : "ml-3 text-lg drop-shadow-sm"
             }
           />
-        </button>
-        {!isCompact && (
+        </button> */}
+        {/* {!isCompact && (
           <div className="flex items-center space-x-3 bg-gradient-to-r from-cyan-300/30 to-blue-400/30 backdrop-blur-sm px-4 py-2 rounded-full border-2 border-white/50 shadow-xl">
             <span className="bg-gradient-to-r from-orange-400 to-red-500 text-white px-3 py-2 rounded-full text-sm font-bold shadow-lg border border-white/30">
               2
@@ -145,7 +145,7 @@ const CustomNavbar = ({ isCompact }) => {
               Hoạt động miễn phí còn lại hôm nay!
             </span>
           </div>
-        )}
+        )} */}
       </div>
       {showParentsMenu && <ParentsMenu onClose={() => setShowParentsMenu(false)} />}
     </div>

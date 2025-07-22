@@ -19,7 +19,7 @@ const GameCard = (props) => {
                 {/* Use the Link component and pass the gameLessonId in the URL */}
                 <p>
                     <Link
-                        to={`${link}/${gameId}`}
+                        to={link.startsWith('/games/') ? link : `${link}/${gameId}`}
                         className="bg-green-500 text-white py-2 px-6 rounded-full text-lg hover:bg-green-600 transition-all"
                     >
                         🎉 Start Game

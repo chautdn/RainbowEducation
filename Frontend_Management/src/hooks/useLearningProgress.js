@@ -1,238 +1,263 @@
-import { useState, useEffect, useCallback } from 'react';
-
-// Learning progress data structure
-const INITIAL_PROGRESS = {
-  vietnamese: {
-    lessons: {
-      '1': { completed: false, score: 0, timeSpent: 0, completedAt: null }, // Nhận biết chữ cái
-      '2': { completed: false, score: 0, timeSpent: 0, completedAt: null }  // Tập viết chữ thường
-    },
-    totalLessons: 2,
-    overallProgress: 0
-  },
-  math: {
-    lessons: {
-      '4': { completed: false, score: 0, timeSpent: 0, completedAt: null }, // Học viết số
-      '5': { completed: false, score: 0, timeSpent: 0, completedAt: null }  // Học đọc số
-    },
-    totalLessons: 2,
-    overallProgress: 0
-  },
-  animal: {
-    lessons: {
-      '1': { completed: false, score: 0, timeSpent: 0, completedAt: null, isPaid: false } // 10 Loại động vật
-    },
-    totalLessons: 1,
-    overallProgress: 0
-  },
-  overall: {
-    totalCompleted: 0,
-    totalLessons: 5,
-    overallProgress: 0,
-    lastActiveDate: null,
-    streakDays: 0
-  }
-};
-
-const STORAGE_KEY = 'rainbow_education_progress';
+import { useState, useEffect } from 'react';
+import { useAuthStore } from '../store/authStore';
+import axiosInstance from '../components/utils/AxiosInstance';
 
 export const useLearningProgress = () => {
-  const [progress, setProgress] = useState(INITIAL_PROGRESS);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Load progress from localStorage on mount
-  useEffect(() => {
-    try {
-      const savedProgress = localStorage.getItem(STORAGE_KEY);
-      if (savedProgress) {
-        const parsedProgress = JSON.parse(savedProgress);
-        setProgress(prevProgress => ({
-          ...prevProgress,
-          ...parsedProgress
-        }));
-      }
-    } catch (error) {
-      console.error('Error loading progress from localStorage:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  // Save progress to localStorage whenever it changes
-  const saveProgress = useCallback((newProgress) => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(newProgress));
-      setProgress(newProgress);
-    } catch (error) {
-      console.error('Error saving progress to localStorage:', error);
-    }
-  }, []);
-
-  // Calculate overall progress for a subject
-  const calculateSubjectProgress = useCallback((subjectData) => {
-    const lessons = Object.values(subjectData.lessons);
-    let totalProgress = 0;
-    
-    lessons.forEach(lesson => {
-      if (lesson.completed) {
-        totalProgress += 100; // Full completion = 100%
-      } else if (lesson.progress && lesson.progress > 0) {
-        totalProgress += lesson.progress; // Partial completion
-      }
+    const [progress, setProgress] = useState({
+        overall: {
+            totalCompleted: 0,
+            overallProgress: 0
+        },
+        vietnamese: {
+            completed: 0,
+            total: 10,
+            overallProgress: 0,
+            nextLesson: 1
+        },
+        math: {
+            completed: 0,
+            total: 10,
+            overallProgress: 0,
+            nextLesson: 1
+        },
+        animal: {
+            completed: 0,
+            total: 10,
+            overallProgress: 0,
+            nextLesson: 1
+        }
     });
-    
-    return Math.round(totalProgress / subjectData.totalLessons);
-  }, []);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const { isAuthenticated, user } = useAuthStore();
 
-  // Update lesson progress
-  const updateLessonProgress = useCallback((subject, lessonId, progressData) => {
-    setProgress(prevProgress => {
-      const updatedProgress = { ...prevProgress };
-      
-      // Update specific lesson
-      updatedProgress[subject].lessons[lessonId] = {
-        ...updatedProgress[subject].lessons[lessonId],
-        ...progressData,
-        completedAt: progressData.completed ? new Date().toISOString() : updatedProgress[subject].lessons[lessonId]?.completedAt
-      };
+    const fetchProgress = async () => {
+        if (!isAuthenticated || !user) {
+            setIsLoading(false);
+            return;
+        }
 
-      // Recalculate subject progress
-      updatedProgress[subject].overallProgress = calculateSubjectProgress(updatedProgress[subject]);
-
-      // Recalculate overall progress
-      const totalCompleted = ['vietnamese', 'math', 'animal'].reduce((sum, subj) => {
-        return sum + Object.values(updatedProgress[subj].lessons).filter(lesson => lesson.completed).length;
-      }, 0);
-
-      updatedProgress.overall = {
-        ...updatedProgress.overall,
-        totalCompleted,
-        overallProgress: Math.round((totalCompleted / updatedProgress.overall.totalLessons) * 100),
-        lastActiveDate: new Date().toISOString()
-      };
-
-      // Save to localStorage
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedProgress));
-      } catch (error) {
-        console.error('Error saving progress:', error);
-      }
-
-      return updatedProgress;
-    });
-  }, [calculateSubjectProgress]);
-
-  // Mark lesson as completed
-  const completeLesson = useCallback((subject, lessonId, score = 100, timeSpent = 0) => {
-    updateLessonProgress(subject, lessonId, {
-      completed: true,
-      score,
-      timeSpent,
-      completedAt: new Date().toISOString()
-    });
-  }, [updateLessonProgress]);
-
-  // Start lesson (track start time)
-  const startLesson = useCallback((subject, lessonId) => {
-    const startTime = Date.now();
-    
-    return {
-      // Return a function to call when lesson ends
-      endLesson: (score = 100, completed = true) => {
-        const timeSpent = Math.round((Date.now() - startTime) / 1000); // in seconds
-        updateLessonProgress(subject, lessonId, {
-          completed,
-          score,
-          timeSpent,
-          completedAt: completed ? new Date().toISOString() : null
-        });
-      }
+        try {
+            setIsLoading(true);
+            setError(null);
+            
+            const response = await axiosInstance.get('/user/lesson-progress');
+            
+            if (response.data.success) {
+                const progressData = response.data.data || [];
+                
+                // Calculate progress for each subject
+                const vietnameseProgress = progressData.filter(p => p.subject === 'vietnamese');
+                const mathProgress = progressData.filter(p => p.subject === 'math');
+                const animalProgress = progressData.filter(p => p.subject === 'animal');
+                
+                const totalCompleted = progressData.filter(p => p.completed).length;
+                const overallProgress = progressData.length > 0 ? Math.round((totalCompleted / progressData.length) * 100) : 0;
+                
+                setProgress({
+                    overall: {
+                        totalCompleted,
+                        overallProgress
+                    },
+                    vietnamese: {
+                        completed: vietnameseProgress.filter(p => p.completed).length,
+                        total: 10,
+                        overallProgress: vietnameseProgress.length > 0 ? Math.round((vietnameseProgress.filter(p => p.completed).length / vietnameseProgress.length) * 100) : 0,
+                        nextLesson: vietnameseProgress.length > 0 ? Math.max(...vietnameseProgress.map(p => p.lessonId)) + 1 : 1
+                    },
+                    math: {
+                        completed: mathProgress.filter(p => p.completed).length,
+                        total: 10,
+                        overallProgress: mathProgress.length > 0 ? Math.round((mathProgress.filter(p => p.completed).length / mathProgress.length) * 100) : 0,
+                        nextLesson: mathProgress.length > 0 ? Math.max(...mathProgress.map(p => p.lessonId)) + 1 : 1
+                    },
+                    animal: {
+                        completed: animalProgress.filter(p => p.completed).length,
+                        total: 10,
+                        overallProgress: animalProgress.length > 0 ? Math.round((animalProgress.filter(p => p.completed).length / animalProgress.length) * 100) : 0,
+                        nextLesson: animalProgress.length > 0 ? Math.max(...animalProgress.map(p => p.lessonId)) + 1 : 1
+                    }
+                });
+            } else {
+                setError(response.data.message || 'Không thể tải dữ liệu tiến độ');
+            }
+        } catch (err) {
+            console.error('Error fetching learning progress:', err);
+            setError(err.response?.data?.message || 'Có lỗi xảy ra khi tải dữ liệu');
+            
+            // Fallback to localStorage if API fails
+            try {
+                const localProgress = localStorage.getItem('learningProgress');
+                if (localProgress) {
+                    const parsed = JSON.parse(localProgress);
+                    setProgress(parsed);
+                }
+            } catch (localErr) {
+                console.error('Error reading from localStorage:', localErr);
+            }
+        } finally {
+            setIsLoading(false);
+        }
     };
-  }, [updateLessonProgress]);
 
-  // Get progress for a specific lesson
-  const getLessonProgress = useCallback((subject, lessonId) => {
-    return progress[subject]?.lessons[lessonId] || { completed: false, score: 0, timeSpent: 0 };
-  }, [progress]);
+    const updateProgress = async (lessonId, progressData) => {
+        if (!isAuthenticated || !user) {
+            return false;
+        }
 
-  // Get subject summary
-  const getSubjectSummary = useCallback((subject) => {
-    const subjectData = progress[subject];
-    if (!subjectData) return null;
+        try {
+            setError(null);
+            
+            const response = await axiosInstance.post('/user/lessons', {
+                lessonId,
+                ...progressData
+            });
 
-    const lessons = Object.entries(subjectData.lessons);
-    const completedLessons = lessons.filter(([_, lesson]) => lesson.completed);
-    const inProgressLessons = lessons.filter(([_, lesson]) => !lesson.completed && lesson.progress > 0);
-    
-    // Calculate average score including partial progress
-    const allActiveScores = lessons
-      .filter(([_, lesson]) => lesson.completed || lesson.score > 0)
-      .map(([_, lesson]) => lesson.score || 0);
-    
-    const averageScore = allActiveScores.length > 0 
-      ? Math.round(allActiveScores.reduce((sum, score) => sum + score, 0) / allActiveScores.length)
-      : 0;
-    
-    const totalTimeSpent = lessons.reduce((sum, [_, lesson]) => sum + (lesson.timeSpent || 0), 0);
-
-    return {
-      totalLessons: subjectData.totalLessons,
-      completedLessons: completedLessons.length,
-      inProgressLessons: inProgressLessons.length,
-      overallProgress: subjectData.overallProgress,
-      averageScore,
-      totalTimeSpent,
-      nextLesson: lessons.find(([_, lesson]) => !lesson.completed)?.[0] || null,
-      // Additional data for detailed view
-      lessonsDetail: Object.fromEntries(lessons)
+            if (response.data.success) {
+                // Update local state
+                setProgress(prev => {
+                    const updated = { ...prev };
+                    
+                    // Update specific subject progress
+                    if (progressData.subject) {
+                        const subjectKey = progressData.subject;
+                        if (updated[subjectKey]) {
+                            updated[subjectKey] = {
+                                ...updated[subjectKey],
+                                completed: progressData.completed ? updated[subjectKey].completed + 1 : updated[subjectKey].completed,
+                                overallProgress: Math.round(((updated[subjectKey].completed + (progressData.completed ? 1 : 0)) / updated[subjectKey].total) * 100)
+                            };
+                        }
+                    }
+                    
+                    // Update overall progress
+                    const totalCompleted = Object.keys(updated).filter(key => key !== 'overall').reduce((sum, key) => sum + updated[key].completed, 0);
+                    const totalLessons = Object.keys(updated).filter(key => key !== 'overall').reduce((sum, key) => sum + updated[key].total, 0);
+                    updated.overall = {
+                        totalCompleted,
+                        overallProgress: totalLessons > 0 ? Math.round((totalCompleted / totalLessons) * 100) : 0
+                    };
+                    
+                    // Also update localStorage as backup
+                    try {
+                        localStorage.setItem('learningProgress', JSON.stringify(updated));
+                    } catch (err) {
+                        console.error('Error updating localStorage:', err);
+                    }
+                    
+                    return updated;
+                });
+                
+                return true;
+            } else {
+                setError(response.data.message || 'Không thể cập nhật tiến độ');
+                return false;
+            }
+        } catch (err) {
+            console.error('Error updating learning progress:', err);
+            setError(err.response?.data?.message || 'Có lỗi xảy ra khi cập nhật tiến độ');
+            
+            // Fallback to localStorage only
+            try {
+                setProgress(prev => {
+                    const updated = { ...prev };
+                    
+                    if (progressData.subject) {
+                        const subjectKey = progressData.subject;
+                        if (updated[subjectKey]) {
+                            updated[subjectKey] = {
+                                ...updated[subjectKey],
+                                completed: progressData.completed ? updated[subjectKey].completed + 1 : updated[subjectKey].completed,
+                                overallProgress: Math.round(((updated[subjectKey].completed + (progressData.completed ? 1 : 0)) / updated[subjectKey].total) * 100)
+                            };
+                        }
+                    }
+                    
+                    localStorage.setItem('learningProgress', JSON.stringify(updated));
+                    return updated;
+                });
+                return true;
+            } catch (localErr) {
+                console.error('Error updating localStorage:', localErr);
+                return false;
+            }
+        }
     };
-  }, [progress]);
 
-  // Reset progress (for testing or new user)
-  const resetProgress = useCallback(() => {
-    const resetData = { ...INITIAL_PROGRESS };
-    saveProgress(resetData);
-  }, [saveProgress]);
+    const startLesson = (subject, lessonId) => {
+        // This function can be used to track when a lesson starts
+        console.log(`Starting lesson ${lessonId} for subject ${subject}`);
+        
+        // You can add additional logic here like:
+        // - Tracking lesson start time
+        // - Updating analytics
+        // - Setting session data
+    };
 
-  // Get learning streak
-  const getLearningStreak = useCallback(() => {
-    // Simple streak calculation based on consecutive days
-    // In a real app, you'd want more sophisticated logic
-    return progress.overall.streakDays || 0;
-  }, [progress]);
-
-  // Get recommended next lesson
-  const getRecommendedLesson = useCallback(() => {
-    // Priority: Vietnamese -> Math -> Animal
-    const subjects = ['vietnamese', 'math', 'animal'];
-    
-    for (const subject of subjects) {
-      const nextLesson = Object.entries(progress[subject].lessons)
-        .find(([_, lesson]) => !lesson.completed);
-      
-      if (nextLesson) {
+    const getSubjectSummary = (subjectKey) => {
+        const subjectProgress = progress[subjectKey];
+        if (!subjectProgress) {
+            return {
+                completed: 0,
+                total: 10,
+                overallProgress: 0,
+                nextLesson: 1
+            };
+        }
+        
         return {
-          subject,
-          lessonId: nextLesson[0],
-          lessonData: nextLesson[1]
+            ...subjectProgress,
+            nextLesson: subjectProgress.nextLesson || 1
         };
-      }
-    }
-    
-    return null; // All lessons completed
-  }, [progress]);
+    };
 
-  return {
-    progress,
-    isLoading,
-    updateLessonProgress,
-    completeLesson,
-    startLesson,
-    getLessonProgress,
-    getSubjectSummary,
-    getRecommendedLesson,
-    getLearningStreak,
-    resetProgress,
-    saveProgress
-  };
+    const resetProgress = async () => {
+        try {
+            setProgress({
+                overall: {
+                    totalCompleted: 0,
+                    overallProgress: 0
+                },
+                vietnamese: {
+                    completed: 0,
+                    total: 10,
+                    overallProgress: 0,
+                    nextLesson: 1
+                },
+                math: {
+                    completed: 0,
+                    total: 10,
+                    overallProgress: 0,
+                    nextLesson: 1
+                },
+                animal: {
+                    completed: 0,
+                    total: 10,
+                    overallProgress: 0,
+                    nextLesson: 1
+                }
+            });
+            localStorage.removeItem('learningProgress');
+            setError(null);
+        } catch (err) {
+            console.error('Error resetting progress:', err);
+            setError('Không thể reset tiến độ');
+        }
+    };
+
+    // Fetch progress on mount and when auth changes
+    useEffect(() => {
+        fetchProgress();
+    }, [isAuthenticated, user]);
+
+    return {
+        progress,
+        isLoading,
+        error,
+        updateProgress,
+        resetProgress,
+        startLesson,
+        getSubjectSummary,
+        refetch: fetchProgress
+    };
 }; 

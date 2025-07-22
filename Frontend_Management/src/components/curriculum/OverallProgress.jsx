@@ -91,7 +91,7 @@ const OverallProgress = ({ progress, isLoading }) => {
           <div className="flex items-center justify-center mb-2">
             <Award className="w-6 h-6" />
           </div>
-          <div className="text-lg font-bold">{progress.overall.totalLessons}</div>
+          <div className="text-lg font-bold">30</div>
           <div className="text-xs opacity-80">Tổng bài học</div>
         </div>
         
@@ -99,7 +99,7 @@ const OverallProgress = ({ progress, isLoading }) => {
           <div className="flex items-center justify-center mb-2">
             <Flame className="w-6 h-6" />
           </div>
-          <div className="text-lg font-bold">{progress.overall.streakDays}</div>
+          <div className="text-lg font-bold">0</div>
           <div className="text-xs opacity-80">Streak ngày</div>
         </div>
         
@@ -108,7 +108,7 @@ const OverallProgress = ({ progress, isLoading }) => {
             <Calendar className="w-6 h-6" />
           </div>
           <div className="text-xs font-bold">
-            {formatDate(progress.overall.lastActiveDate)}
+            Hôm nay
           </div>
           <div className="text-xs opacity-80">Lần cuối</div>
         </div>
@@ -149,9 +149,6 @@ OverallProgress.propTypes = {
     overall: PropTypes.shape({
       overallProgress: PropTypes.number,
       totalCompleted: PropTypes.number,
-      totalLessons: PropTypes.number,
-      streakDays: PropTypes.number,
-      lastActiveDate: PropTypes.string,
     }),
     vietnamese: PropTypes.shape({
       overallProgress: PropTypes.number,

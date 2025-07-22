@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
 import { Mail, Lock, Loader } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import Input from "../../components/authPageComponents/Input";
 import { useAuthStore } from "../../store/authStore";
 import { GoogleLogin } from "@react-oauth/google";
@@ -10,24 +10,51 @@ const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
+  const location = useLocation();
+  const hasRedirected = useRef(false);
+  const hasCheckedAuth = useRef(false);
 
-  const { login, isLoading, error, googleLogin, isAuthenticated } =
+  const { login, isLoading, error, googleLogin, isAuthenticated, isCheckingAuth, checkAuth } =
     useAuthStore();
 
+  // Get redirect info from location state
+  const from = location.state?.from || "/home";
+  const message = location.state?.message;
+
+  // Stabilize navigate function
+  const stableNavigate = useCallback((path, options) => {
+    navigate(path, options);
+  }, [navigate]);
+
+  // Check auth on mount (only once)
   useEffect(() => {
-    // Check if user is already authenticated
-    const token = localStorage.getItem("token");
-    if (token || isAuthenticated) {
-      navigate("/home");
+    if (!hasCheckedAuth.current) {
+      hasCheckedAuth.current = true;
+      checkAuth();
     }
-  }, [isAuthenticated, navigate]);
+  }, [checkAuth]);
+
+  useEffect(() => {
+    // Check if user is already authenticated (after auth check is complete)
+    if (!isCheckingAuth && isAuthenticated && !hasRedirected.current) {
+      hasRedirected.current = true;
+      stableNavigate(from);
+    }
+  }, [isAuthenticated, isCheckingAuth, stableNavigate, from]);
+
+  // Reset redirect flag when auth state changes
+  useEffect(() => {
+    if (!isAuthenticated) {
+      hasRedirected.current = false;
+    }
+  }, [isAuthenticated]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
       const response = await login(email, password);
       if (response?.data?.user) {
-        navigate("/home");
+        stableNavigate(from);
       }
     } catch (err) {
       console.error("Login error:", err);
@@ -38,7 +65,7 @@ const LoginPage = () => {
     try {
       const response = await googleLogin(credentialResponse.credential);
       if (response?.data?.user) {
-        navigate("/home");
+        stableNavigate(from);
       }
     } catch (error) {
       console.error("Google login failed", error);
@@ -56,6 +83,13 @@ const LoginPage = () => {
         <h2 className="text-3xl font-bold mb-6 text-center bg-gradient-to-r from-blue-400 to-cyan-500 text-transparent bg-clip-text">
           Welcome Back
         </h2>
+
+        {/* Show redirect message if exists */}
+        {message && (
+          <div className="mb-4 p-3 bg-blue-500/20 border border-blue-400/30 rounded-lg">
+            <p className="text-blue-200 text-sm">{message}</p>
+          </div>
+        )}
 
         <form onSubmit={handleLogin}>
           <div className="w-full flex justify-center mb-4">

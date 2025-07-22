@@ -3,13 +3,64 @@ import axiosInstance from "../components/utils/AxiosInstance";
 import useErrorStore from './errorStore';
 const API_URL = "/user";
 
-export const useAuthStore = create((set) => ({
+export const useAuthStore = create((set, get) => ({
   user: null,
   isAuthenticated: false,
   error: null,
   isLoading: false,
   isCheckingAuth: true,
   message: null,
+
+  // Check authentication status on app start
+  checkAuth: async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      set({ isCheckingAuth: false, isAuthenticated: false });
+      return;
+    }
+
+    try {
+      set({ isCheckingAuth: true });
+      const response = await axiosInstance.get(`${API_URL}/profile`);
+      
+      if (response.data.status === 'success' && response.data.data?.user) {
+        set({
+          user: response.data.data.user,
+          isAuthenticated: true,
+          isCheckingAuth: false,
+        });
+      } else {
+        // Invalid response, remove token
+        localStorage.removeItem("token");
+        set({
+          user: null,
+          isAuthenticated: false,
+          isCheckingAuth: false,
+        });
+      }
+    } catch (error) {
+      console.error("Auth check failed:", error);
+      
+      // If it's a network error or server error, keep the token but mark as not authenticated
+      // This prevents infinite loops when backend is down
+      if (error.code === 'ERR_NETWORK' || error.response?.status >= 500) {
+        console.log("Backend unavailable, keeping token for later retry");
+        set({
+          user: null,
+          isAuthenticated: false,
+          isCheckingAuth: false,
+        });
+      } else {
+        // For auth errors (401, 403), remove the token
+        localStorage.removeItem("token");
+        set({
+          user: null,
+          isAuthenticated: false,
+          isCheckingAuth: false,
+        });
+      }
+    }
+  },
 
   signup: async (name, email, password) => {
     set({ isLoading: true, error: null });

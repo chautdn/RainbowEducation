@@ -1,19 +1,46 @@
 "use client"
 
-import { gradeOptions, playerData, usePlayerSelector } from "../../data/dashboardData"
+import { useNavigate } from "react-router-dom";
+import { gradeOptions, usePlayerSelector } from "../../data/dashboardData";
+import { useAuthStore } from "../../store/authStore";
 
-export default function PlayerSelector() {
+export default function PlayerSelector({ user }) {
   const { selectedGrade, setSelectedGrade } = usePlayerSelector();
+  const navigate = useNavigate();
+  const { logout } = useAuthStore();
+
+  const handleSettings = () => {
+    navigate("/settings");
+  };
+
+  const handleGames = () => {
+    navigate("/game-lessons");
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
+
+  // Get user initials from name
+  const getUserInitials = (name) => {
+    if (!name) return "U";
+    return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
+  };
+
+  const userInitials = getUserInitials(user?.name);
+  const userName = user?.name || "User";
+  const userStatus = user?.isVerified ? "Verified Parent" : "Parent";
 
   return (
     <div className="flex items-center justify-between bg-white rounded-xl p-4 shadow-sm border border-gray-200">
       <div className="flex items-center gap-3">
-        <div className={`h-10 w-10 rounded-full bg-${playerData.avatarColor}-100 flex items-center justify-center`}>
-          <span className={`text-${playerData.avatarColor}-700 font-semibold text-sm`}>{playerData.initials}</span>
+        <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+          <span className="text-blue-700 font-semibold text-sm">{userInitials}</span>
         </div>
         <div>
-          <h3 className="font-semibold text-gray-900">{playerData.name}</h3>
-          <p className="text-sm text-gray-500">{playerData.status}</p>
+          <h3 className="font-semibold text-gray-900">{userName}</h3>
+          <p className="text-sm text-gray-500">{userStatus}</p>
         </div>
       </div>
 
@@ -30,7 +57,10 @@ export default function PlayerSelector() {
           ))}
         </select>
 
-        <button className="flex items-center gap-2 px-3 py-1.5 text-sm border border-gray-300 rounded-md bg-white hover:bg-gray-50 transition-colors">
+        <button 
+          onClick={handleSettings}
+          className="flex items-center gap-2 px-3 py-1.5 text-sm border border-gray-300 rounded-md bg-white hover:bg-gray-50 transition-colors"
+        >
           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               strokeLinecap="round"
@@ -43,7 +73,10 @@ export default function PlayerSelector() {
           Cài đặt
         </button>
 
-        <button className="flex items-center gap-2 px-3 py-1.5 text-sm border border-gray-300 rounded-md bg-white hover:bg-gray-50 transition-colors">
+        <button 
+          onClick={handleGames}
+          className="flex items-center gap-2 px-3 py-1.5 text-sm border border-gray-300 rounded-md bg-white hover:bg-gray-50 transition-colors"
+        >
           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               strokeLinecap="round"
@@ -53,6 +86,16 @@ export default function PlayerSelector() {
             />
           </svg>
           Trò chơi
+        </button>
+
+        <button 
+          onClick={handleLogout}
+          className="flex items-center gap-2 px-3 py-1.5 text-sm border border-red-300 rounded-md bg-red-50 hover:bg-red-100 transition-colors text-red-600"
+        >
+          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          </svg>
+          Đăng xuất
         </button>
       </div>
     </div>

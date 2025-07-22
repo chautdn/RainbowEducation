@@ -5,6 +5,7 @@ import "react-toastify/dist/ReactToastify.css";
 import { letterGroups } from "../../../data/courseData";
 import LessonCompleteModal from "../../../components/sharedComponents/LessonCompleteModal";
 import { useLearningProgress } from "../../../hooks/useLearningProgress";
+import SyllableGame from '../../../components/lesson/SyllableGame';
 
 export default function LessonDetailPage() {
     const [selectedLetter, setSelectedLetter] = useState(letterGroups[0].letters[0]);
@@ -325,6 +326,7 @@ export default function LessonDetailPage() {
 
     return (
         <div className="h-screen overflow-y-auto bg-gradient-to-br from-sky-100 via-purple-50 to-pink-100">
+            <SyllableGame />
             {/* Header */}
             <header className="bg-white/80 backdrop-blur-sm shadow-lg border-b-2 border-white/50">
                 <div className="max-w-7xl mx-auto px-4 py-4">

@@ -27,7 +27,7 @@ const SignUpPage = () => {
           email: email,
         },
       });
-    } catch (err) {
+    } catch {
       // Handle signup error
     }
   };

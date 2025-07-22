@@ -90,7 +90,7 @@ const ProgressCard = ({
           <div className="flex items-center justify-center mb-1">
             <CheckCircle size={16} />
           </div>
-          <div className="text-sm font-bold">{summary?.completedLessons || 0}/{summary?.totalLessons || 0}</div>
+          <div className="text-sm font-bold">{summary?.completed || 0}/{summary?.total || 10}</div>
           <div className="text-xs opacity-80">Hoàn thành</div>
         </div>
         
@@ -98,8 +98,8 @@ const ProgressCard = ({
           <div className="flex items-center justify-center mb-1">
             <Trophy size={16} />
           </div>
-          <div className="text-sm font-bold">{summary?.averageScore || 0}%</div>
-          <div className="text-xs opacity-80">Điểm TB</div>
+          <div className="text-sm font-bold">{summary?.overallProgress || 0}%</div>
+          <div className="text-xs opacity-80">Tiến độ</div>
         </div>
         
         <div className="text-center">
@@ -107,19 +107,13 @@ const ProgressCard = ({
             <Clock size={16} />
           </div>
           <div className="text-sm font-bold">
-            {summary?.totalTimeSpent ? formatTime(summary.totalTimeSpent) : '0s'}
+            {summary?.nextLesson || 1}
           </div>
-          <div className="text-xs opacity-80">Thời gian</div>
+          <div className="text-xs opacity-80">Bài tiếp theo</div>
         </div>
       </div>
 
-      {/* In Progress Lessons Info */}
-      {summary?.inProgressLessons > 0 && (
-        <div className="mb-4 p-3 bg-white/10 rounded-lg">
-          <div className="text-xs opacity-90 mb-1">📝 Đang học dở:</div>
-          <div className="text-sm font-semibold">{summary.inProgressLessons} bài học</div>
-        </div>
-      )}
+
 
       {/* Next Lesson Action */}
       {nextLesson ? (
@@ -189,11 +183,9 @@ ProgressCard.propTypes = {
   color: PropTypes.string,
   summary: PropTypes.shape({
     overallProgress: PropTypes.number,
-    completedLessons: PropTypes.number,
-    totalLessons: PropTypes.number,
-    averageScore: PropTypes.number,
-    totalTimeSpent: PropTypes.number,
-    inProgressLessons: PropTypes.number,
+    completed: PropTypes.number,
+    total: PropTypes.number,
+    nextLesson: PropTypes.number,
   }),
   nextLesson: PropTypes.string,
   isLoading: PropTypes.bool,

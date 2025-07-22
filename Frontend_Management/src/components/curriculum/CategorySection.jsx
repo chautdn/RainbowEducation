@@ -2,11 +2,11 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import PropTypes from "prop-types";
 import { getCourseNamesByGrade, courseImages } from "../../data/courseData";
-import { Lock, Crown } from "lucide-react";
+import { Lock } from "lucide-react";
 
 export default function CategorySection({ title, active, categoryType, note }) {
   const navigate = useNavigate();
-  const grades = ["Pre-K", "K", "1", "2", "3", "4", "5"];
+  const grades = ["Pre-K", "K", "3", "4", "5", "6", "7"];
   const [selectedGrade, setSelectedGrade] = React.useState("Pre-K");
 
   // Lấy danh sách khóa học dựa trên grade và categoryType
@@ -24,7 +24,12 @@ export default function CategorySection({ title, active, categoryType, note }) {
     // Kiểm tra nếu là khóa học động vật
     if (course.note === "animals") {
       navigate(`/lesson-detail/animal/lesson${course.lessonId}`);
-    } else {
+    } 
+    // Kiểm tra nếu là game tiếng Việt
+    else if (course.note === "games") {
+      navigate(`/games/${course.lessonId}`);
+    } 
+    else {
       navigate(`/lesson-detail/vietnamese/lesson${course.lessonId}`);
     }
   }
@@ -73,17 +78,23 @@ export default function CategorySection({ title, active, categoryType, note }) {
       <div className="grid grid-cols-4 gap-6">
         {currentCourseNames.map((course, index) => {
           const getDescription = () => course.description || "Mô tả khóa học";
-          const getIcon = () => (course.tag === "math" ? "🔢" : "📚");
+          const getIcon = () => {
+            if (course.tag === "math") return "🔢";
+            if (course.note === "games") return "🎮";
+            return "📚";
+          };
           const courseName =
             course.title || course.name || `Course ${index + 1}`;
 
           return (
             <div
-              key={course._id || course.id || index}
+              key={`${course.tag}-${course.lessonId}-${index}`}
               onClick={() => handleCourseClick(course)}
                                             className={`bg-[#302f5b] rounded-md text-white text-xs p-4 min-w-[220px] min-h-[220px] shadow-md hover:brightness-110 transition-all duration-300 flex flex-col cursor-pointer relative ${
                  course.tag === "math"
                    ? "border-2 border-green-400"
+                   : course.note === "games"
+                   ? "border-2 border-yellow-400"
                    : "border-2 border-purple-400"
                 } ${!course.isFree ? 'ring-4 ring-red-400 ring-opacity-50 shadow-xl' : ''}`}
             >
@@ -118,6 +129,8 @@ export default function CategorySection({ title, active, categoryType, note }) {
                    ${
                      categoryType === "math"
                        ? "bg-gradient-to-br from-green-500 to-blue-500"
+                       : course.note === "games"
+                       ? "bg-gradient-to-br from-yellow-500 to-orange-500"
                        : "bg-gradient-to-br from-purple-500 to-pink-500"
                    }
                    ${!course.isFree ? 'blur-sm hover:blur-none' : ''}
@@ -154,6 +167,8 @@ export default function CategorySection({ title, active, categoryType, note }) {
                       ${
                         categoryType === "math"
                           ? "bg-green-400"
+                          : course.note === "games"
+                          ? "bg-yellow-400"
                           : "bg-purple-400"
                       }
                     `}
@@ -161,7 +176,11 @@ export default function CategorySection({ title, active, categoryType, note }) {
                   ></div>
                 </div>
                 <div className="text-xs mt-1 opacity-75">
-                  {categoryType === "math" ? "0/10 số" : "0/10 bài học"}
+                  {categoryType === "math" 
+                    ? "0/10 số" 
+                    : course.note === "games"
+                    ? "0/10 trò chơi"
+                    : "0/10 bài học"}
                 </div>
               </div>
             </div>

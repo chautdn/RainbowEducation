@@ -1,12 +1,48 @@
 import { FaArrowLeft } from "react-icons/fa";
 import BackgroundStars from "../../components/BackgroundStars";
 import { useNavigate } from "react-router-dom";
+import { useAuthStore } from "../../store/authStore";
 
 export const SettingsPage = () => {
     const navigate = useNavigate();
+    const { logout } = useAuthStore();
 
     const handleGoBack = () => {
         navigate('/home');
+    };
+
+    const handleLogout = async () => {
+        try {
+            await logout();
+            navigate('/login');
+        } catch (error) {
+            console.error('Logout error:', error);
+            // Even if logout fails, clear local storage and redirect
+            localStorage.removeItem('token');
+            navigate('/login');
+        }
+    };
+
+    const handleMenuClick = (text) => {
+        switch (text) {
+            case "Đăng xuất":
+                handleLogout();
+                break;
+            case "Thời Khóa Biểu":
+                // Handle schedule
+                break;
+            case "Thông tin tài khoản":
+                // Handle account info
+                break;
+            case "Cài đặt":
+                // Handle settings
+                break;
+            case "Xóa tài khoản":
+                // Handle delete account
+                break;
+            default:
+                break;
+        }
     };
 
     return (
@@ -52,7 +88,8 @@ export const SettingsPage = () => {
                     ].map((text) => (
                         <button
                             key={text}
-                            className="w-full bg-gray-300 py-5 rounded-lg text-left px-6 text-base font-medium"
+                            className="w-full bg-gray-300 py-5 rounded-lg text-left px-6 text-base font-medium hover:bg-gray-400 transition-colors"
+                            onClick={() => handleMenuClick(text)}
                         >
                             {text}
                         </button>

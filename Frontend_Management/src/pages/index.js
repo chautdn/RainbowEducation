@@ -1,11 +1,15 @@
 export { default as GamePage } from "./GamePage/GamePage";
 export { default as GameLessons } from "./GameLessons/GameLessons";
 export { default as AllLessons } from "./allGames/AllGames";
+export { default as SyllableGamePage } from "./SyllableGamePage";
+export { default as BodyPartsPage } from "./BodyPartsPage";
+export { default as WeatherClothingPage } from "./WeatherClothingPage";
 
 
 // Shape Games
 export { default as LearnShapes } from "./shapeGames/LearnShapes";
 export { default as ShapeRace } from "./shapeGames/shapeRaceGame/ShapeRace";
+export { default as ShapeMatcherPage } from "./shapeGames/ShapeMatcherPage";
 
 
 // Counting Games

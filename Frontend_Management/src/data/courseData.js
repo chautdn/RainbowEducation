@@ -136,6 +136,11 @@ export function getCourseNamesByGrade(grade, categoryType, note = null) {
     allCourses = [...allCourses, ...animalCourses];
   }
   
+  // Thêm vietnamese games nếu có note "games" hoặc không có note cụ thể
+  if (note === "games" || (!note && categoryType === "vietnamese")) {
+    allCourses = [...allCourses, ...vietnameseGames];
+  }
+  
   const filteredByLevel = allCourses.filter((course) => course.level === grade);
 
   // Lọc theo tag và note
@@ -206,6 +211,55 @@ export const writingCourses = [
     lessonIndex: "4",
     price: 0,
     isFree: true,
+  },
+];
+
+// Vietnamese language games for grade 3 (7 years old)
+export const vietnameseGames = [
+  {
+    id: 1,
+    title: "Ghép Vần – Đọc Từ",
+    description: "Trò chơi kéo-thả ghép vần thành từ tiếng Việt, vui nhộn, có hình minh họa!",
+    image: "https://cdn-icons-png.flaticon.com/512/3075/3075977.png",
+    level: "3",
+    duration: "20 phút",
+    progress: 0,
+    tag: "vietnamese",
+    lessonId: "syllable",
+    lessonIndex: "syllable",
+    price: 0,
+    isFree: true,
+    note: "games",
+  },
+  {
+    id: 2,
+    title: "Tạo Câu Vui – Nói Lời Hay",
+    description: "Trò chơi đặt câu tiếng Việt tương tác, giúp trẻ học cách tạo câu hoàn chỉnh!",
+    image: "https://cdn-icons-png.flaticon.com/512/3075/3075977.png",
+    level: "3",
+    duration: "25 phút",
+    progress: 0,
+    tag: "vietnamese",
+    lessonId: "sentence-builder",
+    lessonIndex: "sentence-builder",
+    price: 0,
+    isFree: true,
+    note: "games",
+  },
+  {
+    id: 3,
+    title: "Hành Trình Đọc Truyện – Khám Phá Câu Chuyện",
+    description: "Trò chơi đọc hiểu truyện ngắn tiếng Việt, giúp trẻ phát triển kỹ năng đọc hiểu!",
+    image: "https://cdn-icons-png.flaticon.com/512/3075/3075977.png",
+    level: "3",
+    duration: "30 phút",
+    progress: 0,
+    tag: "vietnamese",
+    lessonId: "story-reader",
+    lessonIndex: "story-reader",
+    price: 0,
+    isFree: true,
+    note: "games",
   },
 ];
 

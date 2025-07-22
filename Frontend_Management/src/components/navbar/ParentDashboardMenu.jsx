@@ -1,11 +1,42 @@
 import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '../../store/authStore';
 
-export default function ParentDashboardMenu() {
+export default function ParentDashboardMenu({ user }) {
     const navigate = useNavigate();
+    const { logout } = useAuthStore();
 
     const handleLogoClick = () => {
         navigate('/home');
     };
+
+    const handleDashboardClick = () => {
+        navigate('/parent-dashboard');
+    };
+
+    const handleCoursesClick = () => {
+        navigate('/curriculum');
+    };
+
+    const handleProgressClick = () => {
+        navigate('/parent-dashboard');
+    };
+
+    const handleSettingsClick = () => {
+        navigate('/settings');
+    };
+
+    const handleLogoutClick = () => {
+        logout();
+        navigate('/login');
+    };
+
+    // Get user initials
+    const getUserInitials = (name) => {
+        if (!name) return "U";
+        return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
+    };
+
+    const userInitials = getUserInitials(user?.name);
 
     return (
         <nav className="bg-white rounded-xl shadow-sm border border-gray-200 mb-6 p-4">
@@ -29,7 +60,10 @@ export default function ParentDashboardMenu() {
                     </button>
 
                     <div className="hidden md:flex items-center gap-1">
-                        <button className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors">
+                        <button 
+                            onClick={handleDashboardClick}
+                            className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+                        >
                             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path
                                     strokeLinecap="round"
@@ -40,7 +74,10 @@ export default function ParentDashboardMenu() {
                             </svg>
                             Dashboard
                         </button>
-                        <button className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors">
+                        <button 
+                            onClick={handleCoursesClick}
+                            className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+                        >
                             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path
                                     strokeLinecap="round"
@@ -51,7 +88,10 @@ export default function ParentDashboardMenu() {
                             </svg>
                             Courses
                         </button>
-                        <button className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors">
+                        <button 
+                            onClick={handleProgressClick}
+                            className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+                        >
                             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path
                                     strokeLinecap="round"
@@ -66,7 +106,11 @@ export default function ParentDashboardMenu() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <button className="p-2 text-gray-700 hover:bg-gray-100 rounded-md transition-colors">
+                    <button 
+                        onClick={handleSettingsClick}
+                        className="p-2 text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+                        title="Settings"
+                    >
                         <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path
                                 strokeLinecap="round"
@@ -76,7 +120,11 @@ export default function ParentDashboardMenu() {
                             />
                         </svg>
                     </button>
-                    <button className="p-2 text-gray-700 hover:bg-gray-100 rounded-md transition-colors">
+                    <button 
+                        onClick={handleSettingsClick}
+                        className="p-2 text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+                        title="Settings"
+                    >
                         <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path
                                 strokeLinecap="round"
@@ -87,8 +135,14 @@ export default function ParentDashboardMenu() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                         </svg>
                     </button>
-                    <div className="h-8 w-8 bg-gray-300 rounded-full flex items-center justify-center">
-                        <span className="text-gray-700 font-semibold text-sm">P</span>
+                    <div className="flex items-center gap-2">
+                        <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center">
+                            <span className="text-blue-700 font-semibold text-sm">{userInitials}</span>
+                        </div>
+                        <div className="hidden sm:block">
+                            <p className="text-sm font-medium text-gray-900">{user?.name || "User"}</p>
+                            <p className="text-xs text-gray-500">{user?.email}</p>
+                        </div>
                     </div>
                 </div>
             </div>

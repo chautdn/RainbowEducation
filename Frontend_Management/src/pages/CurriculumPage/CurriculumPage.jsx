@@ -1,4 +1,5 @@
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import CustomNavbar from '../../components/navbar/CustomNavbar';
 import Tabs from '../../components/curriculum/Tabs';
 import LearningPath from '../../components/curriculum/LearningPath';
@@ -6,14 +7,63 @@ import CategorySection from '../../components/curriculum/CategorySection';
 import FallingNumbers from "../../components/sharedComponents/FallingNumbers";
 import FallingShapes from "../../components/shapes/FallingShapes";
 import ShapesAnimation from "../../components/sharedComponents/ShapesAnimation";
+import { useAuthStore } from "../../store/authStore";
 
 export const CurriculumPage = () => {
+    const navigate = useNavigate();
+    const { isAuthenticated, isLoading: authLoading } = useAuthStore();
+    
     const learningPathRef = useRef(null);
     const mathCategoryRef = useRef(null);
     const vietnameseCategoryRef = useRef(null);
     const animalsCategoryRef = useRef(null);
     const [isCompact, setIsCompact] = useState(false);
     const [activeTab, setActiveTab] = useState("learning");
+    const [hasRedirected, setHasRedirected] = useState(false);
+
+    // Stabilize navigate function with useCallback
+    const redirectToLogin = useCallback(() => {
+        if (!hasRedirected) {
+            setHasRedirected(true);
+            navigate("/login", { 
+                state: { 
+                    from: "/curriculum",
+                    message: "Vui lòng đăng nhập để truy cập chương trình học" 
+                } 
+            });
+        }
+    }, [navigate, hasRedirected]);
+
+    // Check authentication on mount
+    useEffect(() => {
+        if (!authLoading && !isAuthenticated && !hasRedirected) {
+            redirectToLogin();
+        }
+    }, [isAuthenticated, authLoading, hasRedirected, redirectToLogin]);
+
+    // Reset redirect flag when authentication changes
+    useEffect(() => {
+        if (isAuthenticated) {
+            setHasRedirected(false);
+        }
+    }, [isAuthenticated]);
+
+    // Show loading while checking auth
+    if (authLoading) {
+        return (
+            <div className="h-screen bg-gradient-to-r from-blue-200 via-yellow-100 to-pink-200 flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+                    <p className="text-purple-600 font-semibold">Đang kiểm tra đăng nhập...</p>
+                </div>
+            </div>
+        );
+    }
+
+    // Don't render if not authenticated
+    if (!isAuthenticated) {
+        return null;
+    }
 
     useEffect(() => {
         const handleScroll = () => {
@@ -177,7 +227,21 @@ export const CurriculumPage = () => {
                         <div className="bg-gradient-to-br from-pink-100/90 to-rose-100/90 backdrop-blur-sm rounded-3xl shadow-2xl border-2 border-white/50 p-8 mb-8">
                             <CategorySection title="Chương trình Tiếng Việt" active={activeTab === "vietnamese"} categoryType="vietnamese" />
                         </div>
-
+                        {/* Fun Vietnamese Elements */}
+                        <div className="flex justify-center space-x-6 mt-8 mb-8">
+                            <div className="bg-pink-300 p-6 rounded-full shadow-xl animate-bounce border-2 border-white">
+                                📝
+                            </div>
+                            <div className="bg-rose-300 p-6 rounded-full shadow-xl animate-bounce border-2 border-white" style={{ animationDelay: '0.2s' }}>
+                                📖
+                            </div>
+                            <div className="bg-red-300 p-6 rounded-full shadow-xl animate-bounce border-2 border-white" style={{ animationDelay: '0.4s' }}>
+                                🗣️
+                            </div>
+                            <div className="bg-pink-400 p-6 rounded-full shadow-xl animate-bounce border-2 border-white" style={{ animationDelay: '0.6s' }}>
+                                📚
+                            </div>
+                        </div>
                     </div>
 
                     <div className="p-6 max-w-7xl mx-auto" ref={animalsCategoryRef}>
@@ -206,26 +270,10 @@ export const CurriculumPage = () => {
                                 🦁
                             </div>
                         </div>
-
-                        {/* Fun Vietnamese Elements */}
-                        <div className="flex justify-center space-x-6 mt-8 mb-8">
-                            <div className="bg-pink-300 p-6 rounded-full shadow-xl animate-bounce border-2 border-white">
-                                📝
-                            </div>
-                            <div className="bg-rose-300 p-6 rounded-full shadow-xl animate-bounce border-2 border-white" style={{ animationDelay: '0.2s' }}>
-                                📖
-                            </div>
-                            <div className="bg-red-300 p-6 rounded-full shadow-xl animate-bounce border-2 border-white" style={{ animationDelay: '0.4s' }}>
-                                🗣️
-                            </div>
-                            <div className="bg-pink-400 p-6 rounded-full shadow-xl animate-bounce border-2 border-white" style={{ animationDelay: '0.6s' }}>
-                                📚
-                            </div>
-                        </div>
                     </div>
 
                     {/* Bottom Fun Section */}
-                    <div className="p-6 max-w-7xl mx-auto text-center mb-12">
+                    {/* <div className="p-6 max-w-7xl mx-auto text-center mb-12">
                         <div className="bg-gradient-to-r from-yellow-200/90 to-orange-200/90 backdrop-blur-sm rounded-3xl shadow-2xl border-2 border-white/50 p-8">
                             <h2 className="text-3xl font-bold text-orange-700 mb-4 drop-shadow-lg">
                                 Keep Learning & Having Fun! 🌟
@@ -245,7 +293,7 @@ export const CurriculumPage = () => {
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </div> */}
                 </div>
             </main>
         </div>

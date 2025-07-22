@@ -1,5 +1,7 @@
 import { Route, Routes } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
+import { useEffect } from "react";
+import { useAuthStore } from "./store/authStore";
 import AuthLayout from "./layouts/AuthLayout";
 import MainLayout from "./layouts/MainLayout";
 
@@ -26,8 +28,21 @@ import NumberLessonPage from "./pages/lesson-detail/numbers/Lesson1";
 import NumberReadingLessonPage from "./pages/lesson-detail/numbers/Lesson2";
 import AnimalLessonPage from "./pages/lesson-detail/animal/lesson1";
 import LessonAccessDemo from "./components/sharedComponents/LessonAccessDemo";
+import { SyllableGamePage } from "./pages";
+import SentenceBuilderPage from "./pages/SentenceBuilderPage";
+import StoryReaderPage from "./pages/StoryReaderPage";
+import BodyPartsPage from "./pages/BodyPartsPage";
+import { ShapeMatcherPage } from "./pages";
+import { WeatherClothingPage } from "./pages";
 
 function App() {
+  const { checkAuth } = useAuthStore();
+
+  // Check authentication on app start
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
   return (
     <>
       <Routes>
@@ -48,6 +63,16 @@ function App() {
           <Route path="/home" element={<HomePage />} />
           <Route path="/curriculum" element={<CurriculumPage />} />
           <Route path="/game-lessons" element={<GameLessons />} />
+          
+          {/* Specific game routes - đặt trước generic routes */}
+          <Route path="/games/weather-clothing" element={<WeatherClothingPage />} />
+          <Route path="/games/shape-matcher" element={<ShapeMatcherPage />} />
+          <Route path="/games/syllable" element={<SyllableGamePage />} />
+          <Route path="/games/sentence-builder" element={<SentenceBuilderPage />} />
+          <Route path="/games/story-reader" element={<StoryReaderPage />} />
+          <Route path="/games/body-parts" element={<BodyPartsPage />} />
+          
+          {/* Generic game routes - đặt sau specific routes */}
           <Route path="/game-lessons/games/:id" element={<AllGames />} />
           <Route path="/all-games/:id" element={<AllGames />} />
           <Route
