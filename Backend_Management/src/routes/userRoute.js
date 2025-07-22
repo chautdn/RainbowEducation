@@ -16,6 +16,8 @@ router.patch('/reset-password/:token', authController.resetPassword);
 // Payment and lesson access routes (protected)
 router.get('/lessons', authController.protect, userController.getUserLessons);
 router.get('/lessons/:lessonType/:lessonId/access', authController.protect, userController.checkLessonAccess);
+router.post('/lessons', authController.protect, userController.saveUserLessonProgress);
+router.get('/lesson-progress', authController.protect, userController.getUserLessonProgress);
 router.post('/purchase/lesson', authController.protect, userController.purchaseLesson);
 router.post('/purchase/subscription', authController.protect, userController.purchaseSubscription);
 router.get('/profile', authController.protect, userController.getUserProfile);

@@ -1,6 +1,7 @@
 const User = require('../models/user');
 const AppError = require('../utils/appError');
 const catchAsync = require('../utils/catchAsync');
+const LessonProgress = require('../models/lessonProgress');
 
 exports.getAllUsers = catchAsync(async (req, res, next) => {
   const users = await User.find();
@@ -270,6 +271,65 @@ exports.getUserProfile = catchAsync(async (req, res, next) => {
       }
     }
   });
+});
+
+// Save user lesson progress (from frontend)
+exports.saveUserLessonProgress = catchAsync(async (req, res, next) => {
+  const userId = req.user.id;
+  const { 
+    lessonType, 
+    lessonId, 
+    completed, 
+    score, 
+    timeSpent, 
+    progress, 
+    notes, 
+    attempts, 
+    lastVisited,
+    completedLetters,
+    currentLetter,
+    currentGroup,
+    lastStudiedAt,
+    lessonStartTime,
+    currentIndex,
+    totalAttempts,
+    bestScore,
+    averageTimePerQuestion
+  } = req.body;
+
+  // Upsert progress for this user/lesson
+  const progressDoc = await LessonProgress.findOneAndUpdate(
+    { user: userId, lessonType, lessonId },
+    {
+      completed,
+      score,
+      timeSpent,
+      progress,
+      notes,
+      attempts,
+      lastVisited,
+      completedLetters,
+      currentLetter,
+      currentGroup,
+      lastStudiedAt,
+      lessonStartTime,
+      currentIndex,
+      totalAttempts,
+      bestScore,
+      averageTimePerQuestion,
+      lastUpdated: new Date()
+    },
+    { upsert: true, new: true, setDefaultsOnInsert: true }
+  );
+
+  res.status(200).json({ status: 'success', message: 'Progress saved', data: progressDoc });
+});
+
+// Get all lesson progress for current user
+exports.getUserLessonProgress = catchAsync(async (req, res, next) => {
+  const userId = req.user.id;
+  const progressList = await require('../models/lessonProgress').find({ user: userId });
+  res.status(200).json({ status: 'success', data: progressList });
 });
 
 // TODO: PAYMENT GATEWAY INTEGRATION
